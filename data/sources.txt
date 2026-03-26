@@ -1,0 +1,93 @@
+# ============================================================
+# sources.txt — Knowledge Base Citation Registry
+# Project: Aarogya AI — Vernacular Health Assistant
+# Last updated: Day 2 of build
+# ============================================================
+#
+# All sources are freely available public health documents
+# from government/intergovernmental organizations.
+# License: Public domain / freely redistributable for health use.
+
+01_who_dengue.pdf
+  Source:  World Health Organization (WHO)
+  Title:   Dengue and Severe Dengue — Fact Sheet
+  URL:     https://www.who.int/news-room/fact-sheets/detail/dengue-and-severe-dengue
+  Date:    2024
+  License: WHO public health document
+
+02_who_malaria.pdf
+  Source:  World Health Organization (WHO)
+  Title:   Malaria — Fact Sheet
+  URL:     https://www.who.int/news-room/fact-sheets/detail/malaria
+  Date:    2024
+  License: WHO public health document
+
+03_who_tuberculosis.pdf
+  Source:  World Health Organization (WHO)
+  Title:   Tuberculosis (TB) — Fact Sheet
+  URL:     https://www.who.int/news-room/fact-sheets/detail/tuberculosis
+  Date:    2024
+  License: WHO public health document
+
+04_who_cholera.pdf
+  Source:  World Health Organization (WHO)
+  Title:   Cholera — Fact Sheet
+  URL:     https://www.who.int/news-room/fact-sheets/detail/cholera
+  Date:    2024
+  License: WHO public health document
+
+05_cdc_typhoid.pdf
+  Source:  US Centers for Disease Control (CDC)
+  Title:   Typhoid and Paratyphoid Fever — Yellow Book 2024
+  URL:     https://wwwnc.cdc.gov/travel/yellowbook/2024/infections-diseases/typhoid-and-paratyphoid-fever
+  Date:    2024
+  License: CDC public domain
+
+06_cdc_dengue_clinical.pdf
+  Source:  US Centers for Disease Control (CDC)
+  Title:   Dengue — Clinical Guidelines — Yellow Book 2024
+  URL:     https://wwwnc.cdc.gov/travel/yellowbook/2024/infections-diseases/dengue
+  Date:    2024
+  License: CDC public domain
+
+07_cdc_malaria_clinical.pdf
+  Source:  US Centers for Disease Control (CDC)
+  Title:   Malaria — Clinical Guidelines — Yellow Book 2024
+  URL:     https://wwwnc.cdc.gov/travel/yellowbook/2024/infections-diseases/malaria
+  Date:    2024
+  License: CDC public domain
+
+08_cdc_influenza.pdf
+  Source:  US Centers for Disease Control (CDC)
+  Title:   Influenza (Flu) — Yellow Book 2024
+  URL:     https://wwwnc.cdc.gov/travel/yellowbook/2024/infections-diseases/influenza
+  Date:    2024
+  License: CDC public domain
+
+09_ncbi_fever.pdf
+  Source:  MedlinePlus / National Institutes of Health (NIH)
+  Title:   Fever — Patient Information
+  URL:     https://medlineplus.gov/ency/article/003090.htm
+  Date:    2024
+  License: NIH public domain
+
+10_ncbi_diarrhoea.pdf
+  Source:  MedlinePlus / National Institutes of Health (NIH)
+  Title:   Diarrhea — Patient Information
+  URL:     https://medlineplus.gov/diarrhea.html
+  Date:    2024
+  License: NIH public domain
+
+11_ncbi_common_cold.pdf
+  Source:  MedlinePlus / National Institutes of Health (NIH)
+  Title:   Common Cold — Patient Information
+  URL:     https://medlineplus.gov/commoncold.html
+  Date:    2024
+  License: NIH public domain
+
+12_ncbi_skin_infections.pdf
+  Source:  MedlinePlus / National Institutes of Health (NIH)
+  Title:   Skin Infections — Patient Information
+  URL:     https://medlineplus.gov/skininfections.html
+  Date:    2024
+  License: NIH public domain
