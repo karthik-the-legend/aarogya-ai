@@ -164,8 +164,8 @@ def _sarvam_translate(
         headers={"api-subscription-key": api_key},
         json={
             "input"          : text.strip(),
-            "source_language": src_sarvam,
-            "target_language": tgt_sarvam,
+            "source_language_code": src_sarvam,
+            "target_language_code": tgt_sarvam,
             "mode"           : "formal",   # formal = medical-appropriate tone
             "model"          : "mayura:v1"
         },
