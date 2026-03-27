@@ -5,7 +5,7 @@
 # ============================================================
 
 from langchain_community.vectorstores import FAISS
-from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain_huggingface import HuggingFaceEmbeddings
 from config import VECTORSTORE_DIR, EMBEDDING_MODEL
 
 # Load the embedding model (same as ingestion)

@@ -27,6 +27,7 @@ for d in [DATA_DIR, VECTORSTORE_DIR, LOGS_DIR, FRONTEND_DIR]:
 # ────────────────────────────────────────────────────────────────
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 SARVAM_API_KEY = os.getenv("SARVAM_API_KEY", "")
+GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
 
 if not GEMINI_API_KEY:
     raise ValueError(
@@ -65,10 +66,13 @@ RETRIEVAL_TYPE  = "similarity"  # "similarity" or "mmr" (diverse results)
 # ────────────────────────────────────────────────────────────────
 # SECTION 6: LLM (Gemini Flash)
 # ────────────────────────────────────────────────────────────────
-LLM_MODEL       = "gemini-1.5-flash"  # free tier: 15 req/min
+LLM_MODEL = "gemini-2.0-flash-lite"  # free tier: 15 req/min
 LLM_TEMPERATURE = 0.1   # 0.0 = deterministic, 1.0 = creative
                          # Medical use: always keep below 0.2
 LLM_MAX_TOKENS  = 512    # response length cap
+LLM_MODEL       = "llama-3.3-70b-versatile"  # free on Groq
+LLM_TEMPERATURE = 0.1
+LLM_MAX_TOKENS  = 512
 
 # ────────────────────────────────────────────────────────────────
 # SECTION 7: WHISPER STT
