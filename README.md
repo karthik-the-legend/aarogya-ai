@@ -124,3 +124,22 @@ See `data/sources.txt` for the full citation list.
 ## Author
 
 **Karthik K S** — [github.com/karthik-the-legend](https://github.com/karthik-the-legend)
+
+---
+
+## Screenshots
+
+### 🟢 Hindi Chat with Triage Badge
+![Hindi Chat](docs/screenshots/01_chat_hindi.png)
+
+### 🔴 Emergency RED Alert
+![Emergency Alert](docs/screenshots/02_emergency_red.png)
+
+### 🎙️ Voice Upload
+![Voice Upload](docs/screenshots/03_voice_upload.png)
+
+### 🔊 Audio Playback
+![Audio Playback](docs/screenshots/04_audio_playback.png)
+
+### 📱 Full Sidebar
+![Sidebar](docs/screenshots/05_sidebar.png)
