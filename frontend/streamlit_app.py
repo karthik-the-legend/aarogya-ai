@@ -459,3 +459,89 @@ if query:
     })
     st.session_state.query_count += 1
     st.session_state.total_ms    += latency
+
+# ── Voice Upload ─────────────────────────────────────────────────
+st.markdown("<br>", unsafe_allow_html=True)
+st.markdown('<div style="font-size:0.78rem;color:#64748b;font-weight:600;margin-bottom:8px">🎙️ VOICE INPUT</div>', unsafe_allow_html=True)
+
+uploaded = st.file_uploader(
+    "Upload audio file",
+    type=["mp3", "wav", "ogg", "m4a"],
+    label_visibility="collapsed",
+    help="Upload an audio file to transcribe and ask"
+)
+
+if uploaded is not None:
+    with st.spinner("🎙️ Transcribing audio..."):
+        try:
+            files = {
+                "audio": (
+                    uploaded.name,
+                    uploaded.read(),
+                    uploaded.type
+                )
+            }
+            r = requests.post(
+                f"{API_BASE}/ask-voice",
+                files=files,
+                timeout=60
+            )
+            r.raise_for_status()
+            data = r.json()
+
+            transcript = data.get("transcript", {})
+            answer     = data.get("answer", "")
+            triage     = data.get("triage_level", "green")
+            sources    = data.get("sources", [])
+            latency    = data.get("latency_ms", 0)
+
+            # Show transcript
+            st.markdown(f"""
+            <div style="background:#0f172a;border:1px solid #1e40af33;
+            border-radius:10px;padding:12px 16px;margin-bottom:12px">
+                <div style="font-size:0.72rem;color:#64748b;margin-bottom:4px">
+                    🎙️ WHISPER TRANSCRIPT · {transcript.get('language','Unknown')}
+                </div>
+                <div style="color:#e2e8f0">{transcript.get('text','')}</div>
+            </div>
+            """, unsafe_allow_html=True)
+
+            # Show in chat
+            with st.chat_message("user"):
+                st.markdown(f"🎙️ {transcript.get('text','')}")
+
+            with st.chat_message("assistant"):
+                st.markdown(answer)
+                emoji, cls, label = TRIAGE_CONFIG.get(triage, TRIAGE_CONFIG["green"])
+                st.markdown(f'<span class="{cls}">{emoji} {label}</span>', unsafe_allow_html=True)
+
+                if sources:
+                    with st.expander(f"📚 {len(sources)} source(s) used"):
+                        for s in sources:
+                            name = s['source'].split('\\')[-1].split('/')[-1]
+                            st.markdown(f"""
+                            <div class="source-card">
+                                <strong>{name}</strong> · page {s['page']}<br>
+                                <span style="color:#475569">{s['content'][:120]}...</span>
+                            </div>
+                            """, unsafe_allow_html=True)
+
+                st.caption(f"⏱️ {latency}ms")
+
+            # Save to history
+            st.session_state.messages.append({
+                "role"   : "user",
+                "content": f"🎙️ {transcript.get('text','')}",
+            })
+            st.session_state.messages.append({
+                "role"   : "assistant",
+                "content": answer,
+                "triage" : triage,
+                "latency": latency,
+                "sources": sources,
+            })
+            st.session_state.query_count += 1
+            st.session_state.total_ms    += latency
+
+        except Exception as e:
+            st.error(f"Voice upload failed: {str(e)}")
