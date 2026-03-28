@@ -71,6 +71,9 @@ async def ask_text(request: QueryRequest):
 
     # Step 1: Translate user query to English for FAISS
     query_en = to_english(request.query, request.lang_code)
+    # Fallback unknown language to English
+    if request.lang_code not in SUPPORTED_LANGUAGES:
+        request = request.model_copy(update={"lang_code": "en", "language_name": "English"})
 
     # Step 2: RAG — retrieve chunks + generate response
     rag_result = app.state.rag.ask(
