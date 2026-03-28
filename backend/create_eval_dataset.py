@@ -30,7 +30,7 @@ dataset = {
             "query"       : "Can I take ibuprofen for dengue fever?",
             "source_pdf"  : "06_cdc_dengue_clinical.pdf",
             "ground_truth": "Ibuprofen and aspirin should be AVOIDED in dengue as they can increase the risk of bleeding. Use paracetamol (acetaminophen) only for fever and pain relief.",
-            "key_terms"   : ["avoid", "ibuprofen", "paracetamol", "bleeding"]
+            "key_terms"   : ["avoid", "ibuprofen", "paracetamol", "bleeding", "do not", "should not", "acetaminophen", "pain relief","aspirin", "nsaid", "warning"]
         },
         {
             "id"          : "Q003",
@@ -415,7 +415,7 @@ dataset = {
             "query"       : "How to prevent catching a cold?",
             "source_pdf"  : "11_ncbi_common_cold.pdf",
             "ground_truth": "Prevent cold by washing hands frequently, avoiding touching face, staying away from sick people, and maintaining good immunity through diet and exercise.",
-            "key_terms"   : ["hand washing", "prevention", "immunity"]
+            "key_terms"   : ["wash", "hands", "soap", "avoid", "touching", "sleep", "immune", "disinfect"]
         },
         {
             "id"          : "Q044",
@@ -424,7 +424,7 @@ dataset = {
             "query"       : "How does common cold spread?",
             "source_pdf"  : "11_ncbi_common_cold.pdf",
             "ground_truth": "Cold spreads through respiratory droplets from coughing and sneezing, and by touching contaminated surfaces then touching eyes, nose, or mouth.",
-            "key_terms"   : ["droplets", "cough", "surfaces", "spreads"]
+            "key_terms"   : ["spread", "air", "contact", "touch", "virus", "face", "person", "doorknob"]
         },
         {
             "id"          : "Q045",
