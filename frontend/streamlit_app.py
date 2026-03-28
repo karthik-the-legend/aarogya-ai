@@ -7,6 +7,8 @@
 import streamlit as st
 import requests
 from datetime import datetime
+import io
+from gtts import gTTS
 
 # ── Page config — MUST be first ─────────────────────────────────
 st.set_page_config(
@@ -256,6 +258,29 @@ EXAMPLE_QUERIES = {
     "en": ["Symptoms of dengue fever", "Can I take ibuprofen for dengue?", "Malaria treatment"],
 }
 
+# ── gTTS language map ────────────────────────────────────────────
+GTTS_LANG_MAP = {
+    "hi": "hi",
+    "ta": "ta",
+    "te": "te",
+    "kn": "kn",
+    "ml": "ml",
+    "en": "en",
+}
+
+@st.cache_data(show_spinner=False)
+def text_to_speech(text: str, lang_code: str) -> bytes:
+    """Convert text to speech — cached so same text doesn't regenerate."""
+    gtts_lang = GTTS_LANG_MAP.get(lang_code, "en")
+    try:
+        tts = gTTS(text=text, lang=gtts_lang, slow=False)
+        buf = io.BytesIO()
+        tts.write_to_fp(buf)
+        buf.seek(0)
+        return buf.read()
+    except Exception:
+        return b""
+
 # ── Session state ────────────────────────────────────────────────
 if "messages"    not in st.session_state: st.session_state.messages    = []
 if "query_count" not in st.session_state: st.session_state.query_count = 0
@@ -297,6 +322,12 @@ def check_backend() -> bool:
 
 # ── Sidebar ──────────────────────────────────────────────────────
 with st.sidebar:
+    st.markdown("---")
+    auto_tts = st.checkbox(
+        "🔊 Auto-play audio response",
+        value=True,
+        help="Convert AI response to speech"
+    )
     st.markdown("""
     <div style="text-align:center;padding:10px 0 20px">
         <div style="font-size:2.5rem">🩺</div>
@@ -448,6 +479,15 @@ if query:
                     """, unsafe_allow_html=True)
 
         st.caption(f"⏱️ {latency}ms")
+        # TTS audio playback
+        if auto_tts and triage != "red":
+            with st.spinner("🔊 Generating audio..."):
+                audio_bytes = text_to_speech(answer, lang_code)
+            if audio_bytes:
+                st.markdown("**🔊 Listen:**")
+                st.audio(audio_bytes, format="audio/mp3", start_time=0)
+            else:
+                st.caption("🔕 Audio unavailable")
 
     # Save to history
     st.session_state.messages.append({
