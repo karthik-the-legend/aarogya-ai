@@ -32,3 +32,8 @@ logs/*.csv
 # ── OS garbage ───────────────────────────────────
 .DS_Store
 Thumbs.db
+
+*.mp3
+*.wav
+*.m4a
+*.ogg
