@@ -12,16 +12,14 @@ from config import VECTORSTORE_DIR, EMBEDDING_MODEL
 print("Loading embedding model...")
 embeddings = HuggingFaceEmbeddings(
     model_name=EMBEDDING_MODEL,
-    model_kwargs={'device': 'cpu'},
-    encode_kwargs={'normalize_embeddings': True}
+    model_kwargs={"device": "cpu"},
+    encode_kwargs={"normalize_embeddings": True},
 )
 
 # Load the FAISS index from disk
 print("Loading FAISS index...")
 db = FAISS.load_local(
-    str(VECTORSTORE_DIR),
-    embeddings,
-    allow_dangerous_deserialization=True
+    str(VECTORSTORE_DIR), embeddings, allow_dangerous_deserialization=True
 )
 print(f"Index loaded. Total vectors: {db.index.ntotal}")
 
@@ -29,8 +27,8 @@ print(f"Index loaded. Total vectors: {db.index.ntotal}")
 print("\n--- TEST 1: Dengue Symptoms ---")
 results = db.similarity_search("symptoms of dengue fever", k=3)
 for i, doc in enumerate(results):
-    src = doc.metadata.get('source', 'unknown')
-    pg  = doc.metadata.get('page', '?')
+    src = doc.metadata.get("source", "unknown")
+    pg = doc.metadata.get("page", "?")
     print(f"  Result {i+1}: {src} | page {pg}")
     print(f"  Text: {doc.page_content[:180]}\n")
 
@@ -42,7 +40,7 @@ results2 = db.similarity_search("can I take ibuprofen for dengue", k=3)
 found_warning = False
 for i, doc in enumerate(results2):
     text_lower = doc.page_content.lower()
-    if any(w in text_lower for w in ['ibuprofen', 'nsaid', 'avoid', 'paracetamol']):
+    if any(w in text_lower for w in ["ibuprofen", "nsaid", "avoid", "paracetamol"]):
         found_warning = True
         print(f"  Result {i+1}: {doc.page_content[:200]}\n")
 

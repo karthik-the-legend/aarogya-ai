@@ -1,5 +1,6 @@
 import sys
-sys.path.insert(0, 'backend')
+
+sys.path.insert(0, "backend")
 from triage import EMERGENCY_KEYWORDS
 
 query = "ಎದೆ ನೋವು"

@@ -1,9 +1,9 @@
 import markdown2
 
-with open('PROJECT_REPORT.md', 'r', encoding='utf-8') as f:
+with open("PROJECT_REPORT.md", "r", encoding="utf-8") as f:
     content = f.read()
 
-html = markdown2.markdown(content, extras=['tables', 'fenced-code-blocks'])
+html = markdown2.markdown(content, extras=["tables", "fenced-code-blocks"])
 
 css = """
 body {
@@ -36,9 +36,9 @@ full_html = f"""<!DOCTYPE html>
 </body>
 </html>"""
 
-with open('PROJECT_REPORT.html', 'w', encoding='utf-8') as f:
+with open("PROJECT_REPORT.html", "w", encoding="utf-8") as f:
     f.write(full_html)
 
-print('HTML report created successfully!')
-print('Open PROJECT_REPORT.html in browser')
-print('Then press Ctrl+P and Save as PDF')
+print("HTML report created successfully!")
+print("Open PROJECT_REPORT.html in browser")
+print("Then press Ctrl+P and Save as PDF")

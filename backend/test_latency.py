@@ -1,7 +1,8 @@
 import sys
 import json
 import requests
-sys.path.insert(0, 'backend')
+
+sys.path.insert(0, "backend")
 
 BASE_URL = "http://localhost:8000"
 
@@ -32,12 +33,11 @@ print("Running 20 latency tests...")
 latencies = []
 
 for i, (lang, query) in enumerate(queries, 1):
-    r = requests.post(f"{BASE_URL}/ask", json={
-        "query"        : query,
-        "lang_code"    : lang,
-        "language_name": "English"
-    })
-    ms = r.json().get('latency_ms', 0)
+    r = requests.post(
+        f"{BASE_URL}/ask",
+        json={"query": query, "lang_code": lang, "language_name": "English"},
+    )
+    ms = r.json().get("latency_ms", 0)
     latencies.append(ms)
     print(f"  {i:2}. {query[:40]:<40} → {ms}ms")
 
@@ -52,11 +52,11 @@ print(f"  Max     : {max_ms}ms")
 
 # Save to logs
 log = {
-    "latencies" : latencies,
+    "latencies": latencies,
     "average_ms": avg_ms,
-    "min_ms"    : min_ms,
-    "max_ms"    : max_ms,
-    "queries"   : [q for _, q in queries]
+    "min_ms": min_ms,
+    "max_ms": max_ms,
+    "queries": [q for _, q in queries],
 }
 with open("logs/latency_log.json", "w") as f:
     json.dump(log, f, indent=2)

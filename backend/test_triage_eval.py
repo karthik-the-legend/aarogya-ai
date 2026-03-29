@@ -1,24 +1,25 @@
 import sys
 import json
-sys.path.insert(0, 'backend')
+
+sys.path.insert(0, "backend")
 from triage import classify
 
-with open('logs/evaluation_dataset.json', encoding='utf-8') as f:
+with open("logs/evaluation_dataset.json", encoding="utf-8") as f:
     d = json.load(f)
 
-correct  = 0
+correct = 0
 failures = []
 
 print("=" * 55)
 print("  Triage Evaluation — 20 Emergency Cases")
 print("=" * 55)
 
-for t in d['triage_tests']:
-    r  = classify(t['query'])
-    ok = r.level.value == t['expected']
+for t in d["triage_tests"]:
+    r = classify(t["query"])
+    ok = r.level.value == t["expected"]
     correct += 1 if ok else 0
     if not ok:
-        failures.append(t['query'])
+        failures.append(t["query"])
     status = "PASS" if ok else "FAIL"
     print(f"  {status} [{t['lang']}] {t['query'][:45]}")
 

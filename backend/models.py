@@ -13,9 +13,10 @@ from enum import Enum
 # ── Enums ────────────────────────────────────────────────────────
 class TriageLevel(str, Enum):
     """Maps to badge colours in the frontend UI."""
-    GREEN  = "green"   # home care safe
+
+    GREEN = "green"  # home care safe
     YELLOW = "yellow"  # see doctor today
-    RED    = "red"     # emergency — LLM overridden
+    RED = "red"  # emergency — LLM overridden
 
 
 # ── Request Models ───────────────────────────────────────────────
@@ -29,17 +30,21 @@ class QueryRequest(BaseModel):
         "language_name": "Hindi"
     }
     """
-    query         : str = Field(
-        ..., min_length=3, max_length=500,
-        description="User health question in their native language"
+
+    query: str = Field(
+        ...,
+        min_length=3,
+        max_length=500,
+        description="User health question in their native language",
     )
-    lang_code     : str = Field(
-        default="en", min_length=2, max_length=5,
-        description="ISO 639-1 language code e.g. 'hi' for Hindi"
+    lang_code: str = Field(
+        default="en",
+        min_length=2,
+        max_length=5,
+        description="ISO 639-1 language code e.g. 'hi' for Hindi",
     )
-    language_name : str = Field(
-        default="English",
-        description="Full language name for the LLM system prompt"
+    language_name: str = Field(
+        default="English", description="Full language name for the LLM system prompt"
     )
 
     # Validator: strip leading/trailing whitespace from query
@@ -55,9 +60,10 @@ class Source(BaseModel):
     This is the XAI (Explainable AI) layer — users can see exactly
     which PDF and page the answer came from.
     """
-    source  : str  # filename: "06_cdc_dengue_clinical.pdf"
-    page    : int  # page number (0-indexed)
-    content : str  # first 200 chars of the chunk text
+
+    source: str  # filename: "06_cdc_dengue_clinical.pdf"
+    page: int  # page number (0-indexed)
+    content: str  # first 200 chars of the chunk text
 
 
 # ── Response Models ──────────────────────────────────────────────
@@ -76,12 +82,13 @@ class QueryResponse(BaseModel):
         "detected_language": "hi"
     }
     """
-    answer            : str
-    triage_level      : str          # "green" | "yellow" | "red"
-    triage_override   : bool         # True = RED overrode LLM
-    sources           : List[Source] # retrieved chunks for XAI
-    latency_ms        : int          # total pipeline time
-    detected_language : Optional[str] = "en"  # ISO code
+
+    answer: str
+    triage_level: str  # "green" | "yellow" | "red"
+    triage_override: bool  # True = RED overrode LLM
+    sources: List[Source]  # retrieved chunks for XAI
+    latency_ms: int  # total pipeline time
+    detected_language: Optional[str] = "en"  # ISO code
 
 
 class VoiceTranscript(BaseModel):
@@ -89,9 +96,10 @@ class VoiceTranscript(BaseModel):
     Returned alongside voice response — shows what Whisper heard.
     Displayed in the UI so user can verify transcription was correct.
     """
-    text      : str  # transcribed text from audio
-    lang_code : str  # language Whisper detected
-    language  : str  # full name: "Hindi", "Tamil" etc.
+
+    text: str  # transcribed text from audio
+    lang_code: str  # language Whisper detected
+    language: str  # full name: "Hindi", "Tamil" etc.
 
 
 class VoiceQueryResponse(QueryResponse):
@@ -99,18 +107,21 @@ class VoiceQueryResponse(QueryResponse):
     Extends QueryResponse with the Whisper transcript.
     Used by POST /ask-voice only.
     """
-    transcript : VoiceTranscript
+
+    transcript: VoiceTranscript
 
 
 class HealthResponse(BaseModel):
     """GET /health — tells the frontend if the server is ready."""
-    status     : str   # "ok"
-    rag_loaded : bool  # False until RAGPipeline finishes loading
-    version    : str   # "1.0.0"
+
+    status: str  # "ok"
+    rag_loaded: bool  # False until RAGPipeline finishes loading
+    version: str  # "1.0.0"
 
 
 class ErrorResponse(BaseModel):
     """Returned when something goes wrong — standard error shape."""
-    error   : str            # short error code: "VALIDATION_ERROR"
-    message : str            # human-readable explanation
-    detail  : Optional[str] = None  # stack trace in development
+
+    error: str  # short error code: "VALIDATION_ERROR"
+    message: str  # human-readable explanation
+    detail: Optional[str] = None  # stack trace in development

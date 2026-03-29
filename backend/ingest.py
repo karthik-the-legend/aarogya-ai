@@ -13,14 +13,10 @@ from langchain_community.document_loaders import DirectoryLoader, PyPDFLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import FAISS
 from langchain_huggingface import HuggingFaceEmbeddings
+
 # Import everything from config.py
-from config import (
-    DATA_DIR,
-    VECTORSTORE_DIR,
-    CHUNK_SIZE,
-    CHUNK_OVERLAP,
-    EMBEDDING_MODEL
-)
+from config import DATA_DIR, VECTORSTORE_DIR, CHUNK_SIZE, CHUNK_OVERLAP, EMBEDDING_MODEL
+
 
 def load_documents():
     """
@@ -43,10 +39,7 @@ def load_documents():
         print(f"    ✓ {f.name}")
 
     loader = DirectoryLoader(
-        str(DATA_DIR),
-        glob="**/*.pdf",
-        loader_cls=PyPDFLoader,
-        show_progress=True
+        str(DATA_DIR), glob="**/*.pdf", loader_cls=PyPDFLoader, show_progress=True
     )
     docs = loader.load()
     print(f"  Loaded {len(docs)} total pages")
@@ -64,13 +57,15 @@ def chunk_documents(docs):
     chunk_size uses word count (not characters) because
     words give more stable chunk sizes across PDFs.
     """
-    print(f"\n[2/4] Splitting into chunks (size={CHUNK_SIZE}, overlap={CHUNK_OVERLAP})...")
+    print(
+        f"\n[2/4] Splitting into chunks (size={CHUNK_SIZE}, overlap={CHUNK_OVERLAP})..."
+    )
 
     splitter = RecursiveCharacterTextSplitter(
         chunk_size=CHUNK_SIZE,
         chunk_overlap=CHUNK_OVERLAP,
         length_function=lambda text: len(text.split()),
-        separators=["\n\n", "\n", ". ", " "]
+        separators=["\n\n", "\n", ". ", " "],
     )
 
     chunks = splitter.split_documents(docs)
@@ -101,17 +96,14 @@ def build_faiss_index(chunks):
 
     embeddings = HuggingFaceEmbeddings(
         model_name=EMBEDDING_MODEL,
-        model_kwargs={'device': 'cpu'},
-        encode_kwargs={'normalize_embeddings': True}
+        model_kwargs={"device": "cpu"},
+        encode_kwargs={"normalize_embeddings": True},
     )
 
     print(f"\n[4/4] Building FAISS index for {len(chunks)} chunks...")
     print("  This embeds every chunk — takes ~2-5 minutes on CPU")
 
-    vectorstore = FAISS.from_documents(
-        documents=chunks,
-        embedding=embeddings
-    )
+    vectorstore = FAISS.from_documents(documents=chunks, embedding=embeddings)
 
     vectorstore.save_local(str(VECTORSTORE_DIR))
 
@@ -128,7 +120,7 @@ if __name__ == "__main__":
     print("=" * 55)
 
     documents = load_documents()
-    chunks    = chunk_documents(documents)
+    chunks = chunk_documents(documents)
     build_faiss_index(chunks)
 
     print("\n" + "=" * 55)

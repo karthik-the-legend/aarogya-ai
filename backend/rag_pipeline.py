@@ -5,7 +5,8 @@
 # ================================================================
 
 import sys
-sys.path.insert(0, 'backend')
+
+sys.path.insert(0, "backend")
 
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
@@ -21,7 +22,7 @@ from config import (
     TOP_K_RETRIEVAL,
     LLM_MODEL,
     LLM_TEMPERATURE,
-    LLM_MAX_TOKENS
+    LLM_MAX_TOKENS,
 )
 
 
@@ -38,47 +39,47 @@ class RAGPipeline:
 
     def __init__(self):
         print("[RAGPipeline] Initialising...")
-        self.embeddings  = self._load_embeddings()
+        self.embeddings = self._load_embeddings()
         self.vectorstore = self._load_vectorstore()
-        self.retriever   = self._load_retriever()
-        self.llm         = self._load_llm()
-        self.chain       = self._build_chain()
+        self.retriever = self._load_retriever()
+        self.llm = self._load_llm()
+        self.chain = self._build_chain()
         print("[RAGPipeline] Ready.")
 
     def _load_embeddings(self) -> HuggingFaceEmbeddings:
         print(f"  Loading embeddings: {EMBEDDING_MODEL[-25:]}")
         return HuggingFaceEmbeddings(
             model_name=EMBEDDING_MODEL,
-            model_kwargs={'device': 'cpu'},
-            encode_kwargs={'normalize_embeddings': True}
+            model_kwargs={"device": "cpu"},
+            encode_kwargs={"normalize_embeddings": True},
         )
 
     def _load_vectorstore(self) -> FAISS:
         print(f"  Loading FAISS index from: {VECTORSTORE_DIR}")
         return FAISS.load_local(
-            str(VECTORSTORE_DIR),
-            self.embeddings,
-            allow_dangerous_deserialization=True
+            str(VECTORSTORE_DIR), self.embeddings, allow_dangerous_deserialization=True
         )
 
     def _load_retriever(self):
         return self.vectorstore.as_retriever(
-            search_type="similarity",
-            search_kwargs={"k": TOP_K_RETRIEVAL}
+            search_type="similarity", search_kwargs={"k": TOP_K_RETRIEVAL}
         )
 
     def _load_llm(self):
         from config import GROQ_API_KEY
+
         print(f"  Loading LLM: {LLM_MODEL} via Groq")
         return ChatGroq(
             model=LLM_MODEL,
             api_key=GROQ_API_KEY,
             temperature=LLM_TEMPERATURE,
-            max_tokens=LLM_MAX_TOKENS
+            max_tokens=LLM_MAX_TOKENS,
         )
 
     def _build_chain(self):
-        template = template = """You are Aarogya, a safe health information \
+        template = (
+            template
+        ) = """You are Aarogya, a safe health information \
 assistant for rural Indian patients.
 
 IDENTITY RULES — these override everything else:
@@ -113,8 +114,7 @@ Patient question: {question}
 Your response (in {language}):"""
 
         prompt = PromptTemplate(
-            template=template,
-            input_variables=["context", "question", "language"]
+            template=template, input_variables=["context", "question", "language"]
         )
 
         def format_docs(docs):
@@ -123,7 +123,7 @@ Your response (in {language}):"""
         # Key fix: extract question string before passing to retriever
         chain = (
             {
-                "context" : (lambda x: x["question"]) | self.retriever | format_docs,
+                "context": (lambda x: x["question"]) | self.retriever | format_docs,
                 "question": lambda x: x["question"],
                 "language": lambda x: x["language"],
             }
@@ -151,22 +151,15 @@ Your response (in {language}):"""
         docs = self.retriever.invoke(query)
 
         # Run the chain
-        answer = self.chain.invoke({
-            "question": query,
-            "language": language
-        })
+        answer = self.chain.invoke({"question": query, "language": language})
 
         sources = [
             {
-                "source" : doc.metadata.get("source", "Unknown"),
-                "page"   : doc.metadata.get("page", 0),
-                "content": doc.page_content[:200] + "..."
+                "source": doc.metadata.get("source", "Unknown"),
+                "page": doc.metadata.get("page", 0),
+                "content": doc.page_content[:200] + "...",
             }
             for doc in docs
         ]
 
-        return {
-            "answer"  : answer,
-            "sources" : sources,
-            "n_chunks": len(docs)
-        }
+        return {"answer": answer, "sources": sources, "n_chunks": len(docs)}

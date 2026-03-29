@@ -1,5 +1,6 @@
 import sys
-sys.path.insert(0, 'backend')
+
+sys.path.insert(0, "backend")
 from translate import to_english, from_english, get_cache_info
 
 # Test 1: Hindi → English

@@ -10,16 +10,19 @@ import time
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-sys.path.insert(0, 'backend')
+sys.path.insert(0, "backend")
 
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from models import (
-    QueryRequest, QueryResponse,
-    VoiceQueryResponse, VoiceTranscript,
-    HealthResponse, Source
+    QueryRequest,
+    QueryResponse,
+    VoiceQueryResponse,
+    VoiceTranscript,
+    HealthResponse,
+    Source,
 )
 from rag_pipeline import RAGPipeline
 from triage import classify, TriageLevel
@@ -46,9 +49,9 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="Aarogya AI — Vernacular Health Assistant",
     description="RAG-powered health assistant for rural India. "
-                "Supports Hindi, Tamil, Telugu, Kannada.",
+    "Supports Hindi, Tamil, Telugu, Kannada.",
     version="1.0.0",
-    lifespan=lifespan
+    lifespan=lifespan,
 )
 
 # Allow frontend to call this API from any origin
@@ -73,13 +76,12 @@ async def ask_text(request: QueryRequest):
     query_en = to_english(request.query, request.lang_code)
     # Fallback unknown language to English
     if request.lang_code not in SUPPORTED_LANGUAGES:
-        request = request.model_copy(update={"lang_code": "en", "language_name": "English"})
+        request = request.model_copy(
+            update={"lang_code": "en", "language_name": "English"}
+        )
 
     # Step 2: RAG — retrieve chunks + generate response
-    rag_result = app.state.rag.ask(
-        query=query_en,
-        language=request.language_name
-    )
+    rag_result = app.state.rag.ask(query=query_en, language=request.language_name)
 
     # Step 3: Run triage on query + LLM response
     triage_result = classify(request.query, rag_result["answer"])
@@ -95,12 +97,12 @@ async def ask_text(request: QueryRequest):
             final_answer += f"\n\n{triage_result.message}"
 
     return QueryResponse(
-        answer            = final_answer,
-        triage_level      = triage_result.level.value,
-        triage_override   = triage_result.override,
-        sources           = [Source(**s) for s in rag_result["sources"]],
-        latency_ms        = round((time.time() - t0) * 1000),
-        detected_language = request.lang_code
+        answer=final_answer,
+        triage_level=triage_result.level.value,
+        triage_override=triage_result.override,
+        sources=[Source(**s) for s in rag_result["sources"]],
+        latency_ms=round((time.time() - t0) * 1000),
+        detected_language=request.lang_code,
     )
 
 
@@ -112,37 +114,33 @@ async def ask_voice(audio: UploadFile = File(...)):
     Whisper transcribes audio → feeds into /ask pipeline.
     Accepted formats: .mp3, .wav, .ogg, .m4a
     """
-    allowed = [
-        "audio/mpeg", "audio/wav", "audio/ogg",
-        "audio/mp4", "audio/x-m4a"
-    ]
+    allowed = ["audio/mpeg", "audio/wav", "audio/ogg", "audio/mp4", "audio/x-m4a"]
     if audio.content_type not in allowed:
         raise HTTPException(
-            status_code=400,
-            detail=f"Unsupported audio format: {audio.content_type}"
+            status_code=400, detail=f"Unsupported audio format: {audio.content_type}"
         )
 
     audio_bytes = await audio.read()
-    ext         = "." + audio.filename.split(".")[-1]
+    ext = "." + audio.filename.split(".")[-1]
 
     # Whisper transcription
     transcript_data = transcribe_bytes(audio_bytes, ext)
 
     # Reuse ask_text pipeline
     text_request = QueryRequest(
-        query         = transcript_data["text"],
-        lang_code     = transcript_data["lang_code"],
-        language_name = transcript_data["language"]
+        query=transcript_data["text"],
+        lang_code=transcript_data["lang_code"],
+        language_name=transcript_data["language"],
     )
     text_response = await ask_text(text_request)
 
     return VoiceQueryResponse(
         **text_response.model_dump(),
         transcript=VoiceTranscript(
-            text      = transcript_data["text"],
-            lang_code = transcript_data["lang_code"],
-            language  = transcript_data["language"]
-        )
+            text=transcript_data["text"],
+            lang_code=transcript_data["lang_code"],
+            language=transcript_data["language"],
+        ),
     )
 
 
@@ -151,9 +149,7 @@ async def ask_voice(audio: UploadFile = File(...)):
 async def health_check():
     """Frontend calls this on startup to confirm server is ready."""
     return HealthResponse(
-        status     = "ok",
-        rag_loaded = hasattr(app.state, "rag"),
-        version    = "1.0.0"
+        status="ok", rag_loaded=hasattr(app.state, "rag"), version="1.0.0"
     )
 
 
@@ -165,5 +161,5 @@ async def list_sources():
     if not sources_file.exists():
         return {"sources": [], "count": 0}
     lines = sources_file.read_text(encoding="utf-8").splitlines()
-    pdfs  = [l.strip() for l in lines if l.strip().endswith(".pdf")]
+    pdfs = [l.strip() for l in lines if l.strip().endswith(".pdf")]
     return {"sources": pdfs, "count": len(pdfs)}

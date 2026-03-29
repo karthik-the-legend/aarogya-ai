@@ -1,5 +1,6 @@
 import sys
-sys.path.insert(0, 'backend')
+
+sys.path.insert(0, "backend")
 
 from rag_pipeline import RAGPipeline
 

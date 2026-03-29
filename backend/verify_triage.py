@@ -1,5 +1,6 @@
 import sys
-sys.path.insert(0, 'backend')
+
+sys.path.insert(0, "backend")
 from triage import classify, TriageLevel, EMERGENCY_KEYWORDS, MONITOR_KEYWORDS
 
 print("=" * 55)
@@ -13,19 +14,28 @@ print(f"  ✓ Total keywords : {len(EMERGENCY_KEYWORDS) + len(MONITOR_KEYWORDS)}
 
 # Check 2: RED accuracy
 # Use Unicode codepoints to avoid copy-paste encoding issues
-kannada_chest_pain = '\u0c8e\u0ca6\u0cc6 \u0ca8\u0ccb\u0cb5\u0cc1'
+kannada_chest_pain = "\u0c8e\u0ca6\u0cc6 \u0ca8\u0ccb\u0cb5\u0cc1"
 
 red_tests = [
-    "chest pain", "difficulty breathing", "unconscious",
-    "seizure", "bleeding won't stop", "105 fever",
-    "सीने में दर्द", "மார்பு வலி", "ఛాతీ నొప్పి",
+    "chest pain",
+    "difficulty breathing",
+    "unconscious",
+    "seizure",
+    "bleeding won't stop",
+    "105 fever",
+    "सीने में दर्द",
+    "மார்பு வலி",
+    "ఛాతీ నొప్పి",
     kannada_chest_pain,
-    "stroke", "heart attack"
+    "stroke",
+    "heart attack",
 ]
 red_passed = sum(1 for q in red_tests if classify(q).level == TriageLevel.RED)
-print(f"  ✓ RED accuracy   : {red_passed}/{len(red_tests)} = 100%"
-      if red_passed == len(red_tests)
-      else f"  ✗ RED accuracy   : {red_passed}/{len(red_tests)} FAILED")
+print(
+    f"  ✓ RED accuracy   : {red_passed}/{len(red_tests)} = 100%"
+    if red_passed == len(red_tests)
+    else f"  ✗ RED accuracy   : {red_passed}/{len(red_tests)} FAILED"
+)
 
 # Check 3: No false negatives
 missed = [q for q in red_tests if classify(q).level != TriageLevel.RED]

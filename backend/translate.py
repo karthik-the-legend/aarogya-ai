@@ -20,6 +20,7 @@ from deep_translator import GoogleTranslator
 # Only used if SARVAM_API_KEY is set in .env
 try:
     import requests as _requests
+
     _REQUESTS_AVAILABLE = True
 except ImportError:
     _REQUESTS_AVAILABLE = False
@@ -38,6 +39,7 @@ _SARVAM_CODES: dict = {
     "bn": "bn-IN",  # Bengali
     "en": "en-IN",  # English (Indian variant)
 }
+
 
 # ── Core Functions ───────────────────────────────────────────────
 # @lru_cache caches the last 512 unique (text, lang_code) pairs.
@@ -139,12 +141,7 @@ def _google_translate(text: str, source: str, target: str) -> str:
     return translated if translated else text.strip()
 
 
-def _sarvam_translate(
-    text: str,
-    source: str,
-    target: str,
-    api_key: str
-) -> str:
+def _sarvam_translate(text: str, source: str, target: str, api_key: str) -> str:
     """
     Translate using Sarvam AI API — purpose-built for Indian languages.
     Better than Google for medical terminology and colloquial phrases.
@@ -163,13 +160,13 @@ def _sarvam_translate(
         "https://api.sarvam.ai/translate",
         headers={"api-subscription-key": api_key},
         json={
-            "input"          : text.strip(),
+            "input": text.strip(),
             "source_language_code": src_sarvam,
             "target_language_code": tgt_sarvam,
-            "mode"           : "formal",   # formal = medical-appropriate tone
-            "model"          : "mayura:v1"
+            "mode": "formal",  # formal = medical-appropriate tone
+            "model": "mayura:v1",
         },
-        timeout=10
+        timeout=10,
     )
     response.raise_for_status()
     return response.json()["translated_text"]
@@ -179,7 +176,7 @@ def _sarvam_translate(
 def get_cache_info() -> dict:
     """Return cache statistics — useful for debugging and interview demos."""
     return {
-        "to_english" : to_english.cache_info()._asdict(),
+        "to_english": to_english.cache_info()._asdict(),
         "from_english": from_english.cache_info()._asdict(),
     }
 
