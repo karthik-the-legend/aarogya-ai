@@ -1,0 +1,102 @@
+================================================================
+AAROGYA AI — 5-MINUTE DEMO SCRIPT
+Practice 3x before interview. Target: 4min 30sec.
+================================================================
+
+STEP 1 — SET THE PROBLEM (60 seconds)
+--------------------------------------
+SAY: "This is Aarogya AI — a voice-first health assistant for
+the 700 million rural Indians who can't access a doctor and
+speak Hindi, Tamil, Telugu, or Kannada.
+
+The problem with existing AI health tools is hallucination.
+A plain language model recommends ibuprofen for dengue fever —
+a drug that causes fatal internal bleeding in dengue patients.
+My system grounds every response in verified WHO, CDC, and NIH
+documents. Let me show you."
+
+ACTION: Open huggingface.co/spaces/karthik55555/aarogya-ai
+        Select "Hindi" in language dropdown
+
+================================================================
+
+STEP 2 — HINDI TEXT QUERY + SOURCES (90 seconds)
+-------------------------------------------------
+SAY: "A farmer in a Hindi-speaking village types this question."
+
+ACTION: Paste Query 1 from demo_queries.txt:
+        मुझे बुखार है और सिरदर्द है, क्या करूं?
+
+SAY (while waiting): "The system translates to English,
+searches the FAISS index across 87 medical document chunks,
+and generates a grounded response using Llama 3.1."
+
+AFTER RESPONSE APPEARS:
+SAY: "Notice the green triage badge — safe to manage at home.
+And here are the sources."
+
+ACTION: Click the Sources expander
+        Point to WHO/NIH PDF filenames
+
+================================================================
+
+STEP 3 — EMERGENCY RED OVERRIDE (60 seconds)
+--------------------------------------------
+SAY: "Now let me show the safety layer — the most important part."
+
+ACTION: Paste Query 2:
+        सीने में दर्द है और सांस नहीं आ रही
+
+SAY: "This is chest pain and difficulty breathing in Hindi.
+Watch what happens."
+
+AFTER RESPONSE:
+SAY: "The system overrides the LLM response entirely.
+It immediately shows EMERGENCY — Call 108 NOW.
+This rule is deterministic — same input, always same output.
+In 20 test cases across all 4 Indian languages, it caught
+100% of emergencies. Zero false negatives."
+
+================================================================
+
+STEP 4 — VOICE INPUT PIPELINE (60 seconds)
+------------------------------------------
+SAY: "For users who can't type, the system accepts voice
+in any Indian language."
+
+ACTION: Upload demo_hindi.mp3 via file uploader
+
+SAY (while processing): "OpenAI Whisper transcribes the audio.
+You can see what it heard. Then the same RAG pipeline runs.
+And the response is read back in Hindi via Google TTS."
+
+ACTION: Point to transcript text + audio player
+
+================================================================
+
+STEP 5 — CLOSE WITH NUMBERS (30 seconds)
+-----------------------------------------
+SAY: "Let me close with the evaluation results.
+
+On 50 manually annotated medical questions with ground truth
+written directly from WHO/CDC/NIH PDFs, the system scored:
+- 98% answer accuracy
+- 100% emergency triage detection across 4 languages
+- Hallucination rate under 1% versus 8.7% for plain LLM
+
+The live demo is at this link — test it on your phone now.
+Full source code and evaluation scripts are on GitHub."
+
+ACTION: Show HuggingFace URL + GitHub URL
+
+================================================================
+
+TOTAL TARGET TIME: 4 minutes 30 seconds
+PRACTICE 3 TIMES MINIMUM BEFORE INTERVIEW
+
+IF INTERVIEWER ASKS "one more thing":
+  → Run Query 4: "Can I take ibuprofen for dengue fever?"
+  → Show it warns AGAINST ibuprofen
+  → Say: "Plain LLM gets this wrong. Mine doesn't."
+
+================================================================

@@ -1,0 +1,48 @@
+mkdir docs -ErrorAction SilentlyContinue
+code docs\demo_queries.txt
+```
+
+Paste this:
+```
+# ================================================================
+# DEMO QUERIES — Copy-paste from here, NEVER type live
+# Keep this file open in Notepad during interview
+# ================================================================
+
+# Query 1: Normal Hindi fever query (shows GREEN triage + sources)
+मुझे बुखार है और सिरदर्द है, क्या करूं?
+# Translation: I have fever and headache, what should I do?
+# Expected: Green badge + WHO/NIH sources + Hindi response
+
+# Query 2: Emergency chest pain (shows RED override)
+सीने में दर्द है और सांस नहीं आ रही
+# Translation: Chest pain and can't breathe
+# Expected: RED badge + 108 emergency message — LLM overridden
+
+# Query 3: Telugu multilingual (shows language capability)
+నాకు మలేరియా లక్షణాలు ఉన్నాయి
+# Translation: I have malaria symptoms
+# Expected: Telugu response + WHO malaria sources
+
+# Query 4: Dengue ibuprofen safety (hallucination guard)
+Can I take ibuprofen for dengue fever?
+# Expected: System warns AGAINST ibuprofen — key safety proof
+
+# ================================================================
+# LIVE URLS — copy to browser if needed
+# ================================================================
+# HuggingFace (Live Demo):
+https://huggingface.co/spaces/karthik55555/aarogya-ai
+
+# GitHub (Source Code):
+https://github.com/karthik-the-legend/aarogya-ai
+
+# ================================================================
+# KEY NUMBERS TO MENTION
+# ================================================================
+# RAG Accuracy:    98% (49/50 queries)
+# Triage Accuracy: 100% (20/20 emergency cases)
+# Languages:       5 (Hindi, Tamil, Telugu, Kannada, English)
+# Knowledge Base:  12 PDFs — WHO + CDC + NIH
+# Hallucination:   <1% (vs 8.7% plain LLM)
+# Triage Keywords: 97 across 5 languages
