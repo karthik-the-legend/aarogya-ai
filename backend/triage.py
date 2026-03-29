@@ -40,6 +40,15 @@ EMERGENCY_KEYWORDS = [
     "severe headache", "worst headache",
     "sudden vision loss", "vision gone",
     "anaphylaxis", "allergic shock",
+    "chest hurts", "chest is hurting", "chest is tight",
+    "heart is beating fast", "heart racing", "heart pounding",
+    "blood is flowing", "blood flowing from", "wound won't stop",
+    "bleeding from wound", "my chest hurts",
+    # ── Transliterated Hindi (Roman script) ─────────────────────
+    "chhati mein dard", "chhati mein bahut dard",
+    "sans nahi", "sans lene mein", "behosh ho gaya",
+    "behosh ho gayi", "mera beta behosh", "daura pada",
+    "khoon nahi ruk", "lakwa maar gaya",
 
     # ── Hindi (Devanagari) ───────────────────────────────────────
     "सीने में दर्द", "छाती में दर्द", "सीने में जकड़न",
