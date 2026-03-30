@@ -149,4 +149,4 @@ See `data/sources.txt` for full citation list with URLs.
 
 **Karthik K S** — [github.com/karthik-the-legend](https://github.com/karthik-the-legend)
 
-Live demo: [huggingface.co/spaces/karthik55555/aarogya-ai](https://huggingface.co/spaces/karthik55555/aarogya-ai)
+[![Live Demo](https://img.shields.io/badge/🚀_Live_Demo-Streamlit-red)](https://aarogya-ai-8gqvuucanpgm5vqmcrgyin.streamlit.app)
