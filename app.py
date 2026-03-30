@@ -21,6 +21,28 @@ from rag_pipeline import RAGPipeline
 from triage import classify, TriageLevel
 from translate import to_english, from_english
 
+import warnings
+warnings.filterwarnings("ignore", message=".*torchvision.*")
+warnings.filterwarnings("ignore", message=".*Accessing `__path__`.*")
+
+# Keep Streamlit Cloud awake
+import threading
+import time
+import urllib.request
+
+def keep_alive():
+    while True:
+        try:
+            urllib.request.urlopen(
+                "https://aarogya-ai-8gqvuucanpgm5vqmcrgyin.streamlit.app"
+            )
+        except:
+            pass
+        time.sleep(300)  # ping every 5 minutes
+
+# Start keepalive thread
+threading.Thread(target=keep_alive, daemon=True).start()
+
 # ── Page config ──────────────────────────────────────────────────
 st.set_page_config(
     page_title="Aarogya AI",
