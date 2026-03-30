@@ -156,6 +156,13 @@ with st.sidebar:
 
     st.markdown("<br>", unsafe_allow_html=True)
     auto_tts = st.checkbox("🔊 Auto-play audio response", value=True)
+    st.markdown("<br>", unsafe_allow_html=True)
+    st.markdown('<div style="font-size:0.78rem;color:#64748b;font-weight:600;margin-bottom:8px">🎙️ VOICE INPUT</div>', unsafe_allow_html=True)
+    uploaded = st.file_uploader(
+        "Upload audio (.mp3, .wav)",
+        type=["mp3", "wav", "ogg", "m4a"],
+        key="voice_upload"
+    )
 
     st.markdown("<br>", unsafe_allow_html=True)
     avg_ms = st.session_state.total_ms // max(st.session_state.query_count, 1)
@@ -205,6 +212,71 @@ for msg in st.session_state.messages:
             if msg.get("latency"):
                 st.caption(f"⏱️ {msg['latency']}ms")
 
+
+# ── Handle voice upload ──────────────────────────────────────────
+if uploaded is not None:
+    with st.spinner("🎙️ Transcribing audio..."):
+        try:
+            import tempfile
+            import os
+            ext = "." + uploaded.name.split(".")[-1]
+            with tempfile.NamedTemporaryFile(suffix=ext, delete=False) as tmp:
+                tmp.write(uploaded.read())
+                tmp_path = tmp.name
+            
+            from voice_handler import transcribe
+            transcript_data = transcribe(tmp_path)
+            os.unlink(tmp_path)
+
+            st.markdown(f"""
+            <div style="background:#0f172a;border:1px solid #1e40af33;
+            border-radius:10px;padding:12px 16px;margin:12px 0">
+                <div style="font-size:0.72rem;color:#64748b;margin-bottom:4px">
+                    🎙️ WHISPER TRANSCRIPT · {transcript_data.get('language','Unknown')}
+                </div>
+                <div style="color:#e2e8f0;font-size:1rem">{transcript_data.get('text','')}</div>
+            </div>
+            """, unsafe_allow_html=True)
+
+            # Process through pipeline
+            query    = transcript_data.get('text', '')
+            detected = transcript_data.get('lang_code', 'en')
+            lang_n   = transcript_data.get('language', 'English')
+
+            with st.chat_message("user"):
+                st.markdown(f"🎙️ {query}")
+
+            with st.chat_message("assistant"):
+                with st.spinner("Searching medical knowledge base..."):
+                    result  = ask_pipeline(query, detected, lang_n)
+
+                answer  = result.get("answer", "")
+                triage  = result.get("triage_level", "green")
+                sources = result.get("sources", [])
+                latency = result.get("latency_ms", 0)
+
+                st.markdown(answer)
+                emoji, cls, label = TRIAGE_CONFIG.get(triage, TRIAGE_CONFIG["green"])
+                st.markdown(f'<span class="{cls}">{emoji} {label}</span>', unsafe_allow_html=True)
+
+                if sources:
+                    with st.expander(f"📚 {len(sources)} source(s)"):
+                        for s in sources:
+                            name = s['source'].split('\\')[-1].split('/')[-1]
+                            st.markdown(f'<div class="source-card"><strong>{name}</strong> · page {s["page"]}</div>', unsafe_allow_html=True)
+
+                st.caption(f"⏱️ {latency}ms")
+
+                # Audio response
+                audio_bytes = text_to_speech(answer, detected)
+                if audio_bytes:
+                    st.markdown("**🔊 Listen:**")
+                    st.audio(audio_bytes, format="audio/mp3", start_time=0)
+                    st.download_button("⬇️ Download", audio_bytes, "response.mp3", "audio/mp3")
+
+        except Exception as e:
+            st.error(f"Voice processing failed: {str(e)}")
+
 # ── Prefill ──────────────────────────────────────────────────────
 prefill = st.session_state.pop("prefill", "")
 query   = st.chat_input(f"Ask in {language_name}...") or prefill
@@ -239,7 +311,15 @@ if query:
             with st.spinner("🔊 Generating audio..."):
                 audio_bytes = text_to_speech(answer, lang_code)
             if audio_bytes:
-                st.audio(audio_bytes, format="audio/mp3")
+                st.markdown("**🔊 Listen to response:**")
+                st.audio(audio_bytes, format="audio/mp3", start_time=0)
+                # Show download button as backup
+                st.download_button(
+                    label="⬇️ Download audio",
+                    data=audio_bytes,
+                    file_name="response.mp3",
+                    mime="audio/mp3"
+                )
 
     st.session_state.messages.append({
         "role": "assistant", "content": answer,
