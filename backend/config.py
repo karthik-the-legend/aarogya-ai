@@ -29,10 +29,10 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 SARVAM_API_KEY = os.getenv("SARVAM_API_KEY", "")
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
 
+# NEW — Gemini is optional, we use Groq
 if not GEMINI_API_KEY:
-    raise ValueError(
-        "GEMINI_API_KEY not found.\n" "Add to .env: GEMINI_API_KEY=AIzaSy..."
-    )
+    import warnings
+    warnings.warn("GEMINI_API_KEY not set — using Groq LLM instead")
 
 # ────────────────────────────────────────────────────────────────
 # SECTION 3: EMBEDDING MODEL
