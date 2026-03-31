@@ -201,7 +201,6 @@ with st.sidebar:
         "Upload audio (.mp3, .wav)",
         type=["mp3", "wav", "ogg", "m4a"],
         key="voice_upload",
-        label_visibility="collapsed"
     )
 
     st.markdown("<br>", unsafe_allow_html=True)
