@@ -228,12 +228,12 @@ with st.sidebar:
         st.rerun()
 
 # ── Main area ────────────────────────────────────────────────────
-    st.markdown(f"""
-    <div class="hero">
-        <div class="hero-title">🩺 Aarogya AI</div>
-        <p class="hero-sub">RAG-powered health assistant · WHO · CDC · NIH · Hindi · Tamil · Telugu · Kannada</p>
-    </div>
-    """, unsafe_allow_html=True)
+st.markdown(f"""
+<div class="hero">
+    <div class="hero-title">🩺 Aarogya AI</div>
+    <p class="hero-sub">RAG-powered health assistant · WHO · CDC · NIH · Hindi · Tamil · Telugu · Kannada</p>
+</div>
+""", unsafe_allow_html=True)
 
 # ── Chat history ─────────────────────────────────────────────────
 for msg in st.session_state.messages:
