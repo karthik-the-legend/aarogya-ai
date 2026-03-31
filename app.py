@@ -25,9 +25,14 @@ import warnings
 warnings.filterwarnings("ignore", message=".*torchvision.*")
 warnings.filterwarnings("ignore", message=".*Accessing `__path__`.*")
 
+import warnings
+import logging
+warnings.filterwarnings("ignore")
+logging.getLogger("transformers").setLevel(logging.ERROR)
+os.environ["TRANSFORMERS_VERBOSITY"] = "error"
+
 # Keep Streamlit Cloud awake
 import threading
-import time
 import urllib.request
 
 def keep_alive():
@@ -40,13 +45,6 @@ def keep_alive():
             pass
         time.sleep(300)  # ping every 5 minutes
 
-import warnings
-import logging
-warnings.filterwarnings("ignore")
-logging.getLogger("transformers").setLevel(logging.ERROR)
-os.environ["TRANSFORMERS_VERBOSITY"] = "error"
-
-# Start keepalive thread
 threading.Thread(target=keep_alive, daemon=True).start()
 
 # ── Page config ──────────────────────────────────────────────────
@@ -57,7 +55,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# ── CSS (same as streamlit_app.py) ───────────────────────────────
+# ── CSS ───────────────────────────────────────────────────────────
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&display=swap');
@@ -94,13 +92,14 @@ TRIAGE_CONFIG = {
 }
 GTTS_LANG_MAP = {"hi": "hi", "ta": "ta", "te": "te", "kn": "kn", "en": "en"}
 EXAMPLE_QUERIES = {
-    "hi": ["मुझे बुखार है", "डेंगू के लक्षण क्या हैं"],
+    "hi": ["मुझे बुखार है", "डेंगू के लक्षण क्या हैं", "मलेरिया का इलाज"],
     "ta": ["எனக்கு காய்ச்சல்", "டெங்கு அறிகுறிகள்"],
     "te": ["నాకు జ్వరం వచ్చింది", "డెంగీ లక్షణాలు"],
     "kn": ["ನನಗೆ ಜ್ವರ ಬಂದಿದೆ"],
     "en": ["Symptoms of dengue fever", "Can I take ibuprofen for dengue?"],
 }
 
+# ── Pipeline ─────────────────────────────────────────────────────
 @st.cache_resource(show_spinner="Loading AI pipeline...")
 def load_pipeline():
     return RAGPipeline()
@@ -111,8 +110,6 @@ pipeline = load_pipeline()
 if "messages"    not in st.session_state: st.session_state.messages    = []
 if "query_count" not in st.session_state: st.session_state.query_count = 0
 if "total_ms"    not in st.session_state: st.session_state.total_ms    = 0
-if "pipeline"    not in st.session_state: st.session_state.pipeline    = None
-pipeline = load_pipeline()
 
 # ── TTS function ─────────────────────────────────────────────────
 @st.cache_data(show_spinner=False)
@@ -125,16 +122,8 @@ def text_to_speech(text: str, lang_code: str) -> bytes:
         return buf.read()
     except Exception:
         return b""
-    
-    
-# ── Load pipeline lazily on first query (saves RAM) ─────────────
-def get_pipeline():
-    if st.session_state.pipeline is None:
-        with st.spinner("Loading AI pipeline... (30 seconds on first load)"):
-            st.session_state.pipeline = RAGPipeline()
-    return st.session_state.pipeline
 
-# ── Query function (direct pipeline call — no FastAPI needed) ────
+# ── Query function ────────────────────────────────────────────────
 def ask_pipeline(query: str, lang_code: str, language_name: str) -> dict:
     try:
         t0       = time.time()
@@ -150,19 +139,19 @@ def ask_pipeline(query: str, lang_code: str, language_name: str) -> dict:
                 final_answer += f"\n\n⚠️ Please see a doctor within 24 hours."
 
         return {
-            "answer"        : final_answer,
-            "triage_level"  : triage.level.value,
+            "answer"         : final_answer,
+            "triage_level"   : triage.level.value,
             "triage_override": triage.override,
-            "sources"       : result["sources"],
-            "latency_ms"    : int((time.time() - t0) * 1000),
+            "sources"        : result["sources"],
+            "latency_ms"     : int((time.time() - t0) * 1000),
         }
     except Exception as e:
         return {
-            "answer"        : f"❌ Error: {str(e)}",
-            "triage_level"  : "green",
+            "answer"         : f"❌ Error: {str(e)}",
+            "triage_level"   : "green",
             "triage_override": False,
-            "sources"       : [],
-            "latency_ms"    : 0,
+            "sources"        : [],
+            "latency_ms"     : 0,
         }
 
 # ── Sidebar ──────────────────────────────────────────────────────
@@ -195,12 +184,16 @@ with st.sidebar:
 
     st.markdown("<br>", unsafe_allow_html=True)
     auto_tts = st.checkbox("🔊 Auto-play audio response", value=True)
+
     st.markdown("<br>", unsafe_allow_html=True)
     st.markdown('<div style="font-size:0.78rem;color:#64748b;font-weight:600;margin-bottom:8px">🎙️ VOICE INPUT</div>', unsafe_allow_html=True)
+
+    # ── Single, authoritative file uploader (lives only in sidebar) ──
     uploaded = st.file_uploader(
-        "Upload audio (.mp3, .wav)",
+        "Upload audio (.mp3, .wav, .ogg, .m4a)",
         type=["mp3", "wav", "ogg", "m4a"],
         key="voice_upload",
+        label_visibility="collapsed",
     )
 
     st.markdown("<br>", unsafe_allow_html=True)
@@ -251,18 +244,16 @@ for msg in st.session_state.messages:
             if msg.get("latency"):
                 st.caption(f"⏱️ {msg['latency']}ms")
 
-
-# ── Handle voice upload ──────────────────────────────────────────
+# ── Handle voice upload (uses sidebar's `uploaded` variable) ─────
 if uploaded is not None:
     with st.spinner("🎙️ Transcribing audio..."):
         try:
             import tempfile
-            import os
             ext = "." + uploaded.name.split(".")[-1]
             with tempfile.NamedTemporaryFile(suffix=ext, delete=False) as tmp:
                 tmp.write(uploaded.read())
                 tmp_path = tmp.name
-            
+
             from voice_handler import transcribe
             transcript_data = transcribe(tmp_path)
             os.unlink(tmp_path)
@@ -277,7 +268,6 @@ if uploaded is not None:
             </div>
             """, unsafe_allow_html=True)
 
-            # Process through pipeline
             query    = transcript_data.get('text', '')
             detected = transcript_data.get('lang_code', 'en')
             lang_n   = transcript_data.get('language', 'English')
@@ -306,7 +296,6 @@ if uploaded is not None:
 
                 st.caption(f"⏱️ {latency}ms")
 
-                # Audio response
                 audio_bytes = text_to_speech(answer, detected)
                 if audio_bytes:
                     st.markdown("**🔊 Listen:**")
@@ -316,18 +305,9 @@ if uploaded is not None:
         except Exception as e:
             st.error(f"Voice processing failed: {str(e)}")
 
-# Voice upload - disabled on cloud to save memory
-IS_CLOUD = os.getenv("STREAMLIT_SHARING_MODE") is not None or os.getenv("HOME") == "/home/adminuser"
-
-if not IS_CLOUD:
-    uploaded = st.file_uploader("Upload audio", type=["mp3","wav"])
-else:
-    st.markdown('<div style="font-size:0.75rem;color:#64748b">🎙️ Voice input available in local version</div>', unsafe_allow_html=True)
-    uploaded = None
-
-# ── Prefill ──────────────────────────────────────────────────────
+# ── Prefill & chat input ─────────────────────────────────────────
 prefill = st.session_state.pop("prefill", "")
-query   = st.chat_input(f"Ask in {language_name}...") or prefill
+query   = st.chat_input(f"Ask in {language_name}... e.g. symptoms of dengue") or prefill
 
 if query:
     with st.chat_message("user"):
@@ -361,7 +341,6 @@ if query:
             if audio_bytes:
                 st.markdown("**🔊 Listen to response:**")
                 st.audio(audio_bytes, format="audio/mp3", start_time=0)
-                # Show download button as backup
                 st.download_button(
                     label="⬇️ Download audio",
                     data=audio_bytes,
