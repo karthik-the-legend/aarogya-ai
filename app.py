@@ -194,12 +194,14 @@ with st.sidebar:
     st.markdown('<div style="font-size:0.78rem;color:#94a3b8;line-height:2">📄 WHO Fact Sheets (4 PDFs)<br>📄 CDC Yellow Book 2024 (4 PDFs)<br>📄 NIH MedlinePlus (4 PDFs)</div>', unsafe_allow_html=True)
 
     st.markdown("<br>", unsafe_allow_html=True)
+    auto_tts = st.checkbox("🔊 Auto-play audio response", value=True)
+    st.markdown("<br>", unsafe_allow_html=True)
     st.markdown('<div style="font-size:0.78rem;color:#64748b;font-weight:600;margin-bottom:8px">🎙️ VOICE INPUT</div>', unsafe_allow_html=True)
     uploaded = st.file_uploader(
-        "Upload audio",
+        "Upload audio (.mp3, .wav)",
         type=["mp3", "wav", "ogg", "m4a"],
         key="voice_upload",
-        label_visibility="expanded"
+        label_visibility="collapsed"
     )
 
     st.markdown("<br>", unsafe_allow_html=True)
