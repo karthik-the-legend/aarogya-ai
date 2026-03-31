@@ -203,14 +203,7 @@ with st.sidebar:
         key="voice_upload"
     )
     
-    st.markdown("<br>", unsafe_allow_html=True)
-    st.markdown('<div style="font-size:0.78rem;color:#64748b;font-weight:600;margin-bottom:8px">🎙️ VOICE INPUT</div>', unsafe_allow_html=True)
-    uploaded = st.file_uploader(
-        "Upload audio",
-        type=["mp3", "wav", "ogg", "m4a"],
-        key="voice_upload",
-        label_visibility="collapsed"
-    )
+    
 
     st.markdown("<br>", unsafe_allow_html=True)
     avg_ms = st.session_state.total_ms // max(st.session_state.query_count, 1)
