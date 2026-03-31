@@ -1,24 +1,13 @@
+[server]
+maxUploadSize = 5
+maxMessageSize = 50
+
+[browser]
+gatherUsageStats = false
+
 [theme]
 base = "dark"
 backgroundColor = "#0a0f1e"
 secondaryBackgroundColor = "#111827"
 primaryColor = "#3b82f6"
 textColor = "#e2e8f0"
-font = "sans serif"
-
-[server]
-headless = true
-port = 8501
-
-[browser]
-gatherUsageStats = false
-
-[server]
-maxUploadSize = 5
-maxMessageSize = 50
-
-[runner]
-fastReruns = false
-
-[browser]
-gatherUsageStats = false

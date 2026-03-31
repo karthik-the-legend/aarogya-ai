@@ -40,6 +40,12 @@ def keep_alive():
             pass
         time.sleep(300)  # ping every 5 minutes
 
+import warnings
+import logging
+warnings.filterwarnings("ignore")
+logging.getLogger("transformers").setLevel(logging.ERROR)
+os.environ["TRANSFORMERS_VERBOSITY"] = "error"
+
 # Start keepalive thread
 threading.Thread(target=keep_alive, daemon=True).start()
 
@@ -95,9 +101,11 @@ EXAMPLE_QUERIES = {
     "en": ["Symptoms of dengue fever", "Can I take ibuprofen for dengue?"],
 }
 
-@st.cache_resource
+@st.cache_resource(show_spinner="Loading AI pipeline...")
 def load_pipeline():
     return RAGPipeline()
+
+pipeline = load_pipeline()
 
 # ── Session state ────────────────────────────────────────────────
 if "messages"    not in st.session_state: st.session_state.messages    = []
@@ -196,6 +204,13 @@ with st.sidebar:
     )
 
     st.markdown("<br>", unsafe_allow_html=True)
+    st.markdown('<div style="font-size:0.78rem;color:#64748b;font-weight:600;margin-bottom:8px">🎙️ VOICE INPUT</div>', unsafe_allow_html=True)
+    uploaded = st.file_uploader(
+        "Upload audio",
+        type=["mp3", "wav", "ogg", "m4a"],
+        key="voice_upload",
+        label_visibility="collapsed"
+    )
     avg_ms = st.session_state.total_ms // max(st.session_state.query_count, 1)
     st.markdown(f"""
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
