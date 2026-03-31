@@ -95,15 +95,16 @@ EXAMPLE_QUERIES = {
     "en": ["Symptoms of dengue fever", "Can I take ibuprofen for dengue?"],
 }
 
+@st.cache_resource
+def load_pipeline():
+    return RAGPipeline()
+
 # ── Session state ────────────────────────────────────────────────
-if "pipeline"    not in st.session_state:
-    with st.spinner("Loading AI pipeline... (first load takes ~30 seconds)"):
-        st.session_state.pipeline = RAGPipeline()
 if "messages"    not in st.session_state: st.session_state.messages    = []
 if "query_count" not in st.session_state: st.session_state.query_count = 0
 if "total_ms"    not in st.session_state: st.session_state.total_ms    = 0
-
-pipeline = st.session_state.pipeline
+if "pipeline"    not in st.session_state: st.session_state.pipeline    = None
+pipeline = load_pipeline()
 
 # ── TTS function ─────────────────────────────────────────────────
 @st.cache_data(show_spinner=False)
@@ -116,6 +117,14 @@ def text_to_speech(text: str, lang_code: str) -> bytes:
         return buf.read()
     except Exception:
         return b""
+    
+    
+# ── Load pipeline lazily on first query (saves RAM) ─────────────
+def get_pipeline():
+    if st.session_state.pipeline is None:
+        with st.spinner("Loading AI pipeline... (30 seconds on first load)"):
+            st.session_state.pipeline = RAGPipeline()
+    return st.session_state.pipeline
 
 # ── Query function (direct pipeline call — no FastAPI needed) ────
 def ask_pipeline(query: str, lang_code: str, language_name: str) -> dict:
@@ -298,6 +307,15 @@ if uploaded is not None:
 
         except Exception as e:
             st.error(f"Voice processing failed: {str(e)}")
+
+# Voice upload - disabled on cloud to save memory
+IS_CLOUD = os.getenv("STREAMLIT_SHARING_MODE") is not None or os.getenv("HOME") == "/home/adminuser"
+
+if not IS_CLOUD:
+    uploaded = st.file_uploader("Upload audio", type=["mp3","wav"])
+else:
+    st.markdown('<div style="font-size:0.75rem;color:#64748b">🎙️ Voice input available in local version</div>', unsafe_allow_html=True)
+    uploaded = None
 
 # ── Prefill ──────────────────────────────────────────────────────
 prefill = st.session_state.pop("prefill", "")
