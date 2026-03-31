@@ -202,8 +202,6 @@ with st.sidebar:
         type=["mp3", "wav", "ogg", "m4a"],
         key="voice_upload"
     )
-    
-    
 
     st.markdown("<br>", unsafe_allow_html=True)
     avg_ms = st.session_state.total_ms // max(st.session_state.query_count, 1)
@@ -228,14 +226,6 @@ with st.sidebar:
         st.session_state.query_count = 0
         st.session_state.total_ms    = 0
         st.rerun()
-
-st.markdown("""
-    <div style="text-align:center;padding:10px 0 20px">
-        <div style="font-size:2.5rem">🩺</div>
-        <div style="font-size:1.1rem;font-weight:700;color:#60a5fa">Aarogya AI</div>
-        <div style="font-size:0.72rem;color:#64748b;margin-top:4px">Vernacular Health Assistant</div>
-    </div>
-    """, unsafe_allow_html=True)
 
 # ── Main area ────────────────────────────────────────────────────
 st.markdown(f"""
