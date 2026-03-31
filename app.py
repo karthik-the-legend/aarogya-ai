@@ -199,9 +199,9 @@ with st.sidebar:
         "Upload audio",
         type=["mp3", "wav", "ogg", "m4a"],
         key="voice_upload",
-        label_visibility="collapsed"
+        label_visibility="expanded"
     )
-    
+
     st.markdown("<br>", unsafe_allow_html=True)
     avg_ms = st.session_state.total_ms // max(st.session_state.query_count, 1)
     st.markdown(f"""
