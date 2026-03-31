@@ -316,6 +316,14 @@ if uploaded is not None:
         except Exception as e:
             st.error(f"Voice processing failed: {str(e)}")
 
+# Voice upload - disabled on cloud to save memory
+IS_CLOUD = os.getenv("STREAMLIT_SHARING_MODE") is not None or os.getenv("HOME") == "/home/adminuser"
+
+if not IS_CLOUD:
+    uploaded = st.file_uploader("Upload audio", type=["mp3","wav"])
+else:
+    st.markdown('<div style="font-size:0.75rem;color:#64748b">🎙️ Voice input available in local version</div>', unsafe_allow_html=True)
+    uploaded = None
 
 # ── Prefill ──────────────────────────────────────────────────────
 prefill = st.session_state.pop("prefill", "")
