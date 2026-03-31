@@ -55,7 +55,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# ── CSS ───────────────────────────────────────────────────────────
+# ── CSS + Force sidebar open ──────────────────────────────────────
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&display=swap');
@@ -74,7 +74,42 @@ section[data-testid="stSidebar"] { background: #0d1424 !important; border-right:
 .stSelectbox > div > div { background: #111827 !important; border: 1px solid #1e293b !important; border-radius: 8px !important; }
 .stButton > button { background: #1e293b !important; color: #94a3b8 !important; border: 1px solid #334155 !important; border-radius: 8px !important; }
 .stAlert { background: #ffd60010 !important; border: 1px solid #ffd60030 !important; border-radius: 10px !important; color: #ffd600 !important; }
+
+/* ── Force sidebar to always be visible and expanded ── */
+section[data-testid="stSidebar"] {
+    width: 21rem !important;
+    min-width: 21rem !important;
+    transform: translateX(0px) !important;
+    display: block !important;
+    visibility: visible !important;
+}
+/* Hide the collapse/expand toggle button entirely */
+button[data-testid="collapsedControl"],
+button[kind="header"] {
+    display: none !important;
+}
+/* Prevent the main content from sliding under the sidebar */
+.main > div:first-child {
+    margin-left: 21rem !important;
+}
 </style>
+
+<script>
+// Ensure sidebar is expanded on load and after reruns
+(function expandSidebar() {
+    function tryExpand() {
+        // Find and click the expand button if sidebar is collapsed
+        const collapsed = window.parent.document.querySelector(
+            '[data-testid="collapsedControl"]'
+        );
+        if (collapsed) { collapsed.click(); }
+    }
+    // Run immediately and after a short delay to catch post-rerun state
+    tryExpand();
+    setTimeout(tryExpand, 500);
+    setTimeout(tryExpand, 1500);
+})();
+</script>
 """, unsafe_allow_html=True)
 
 # ── Constants ────────────────────────────────────────────────────
