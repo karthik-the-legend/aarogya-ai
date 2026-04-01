@@ -12,7 +12,7 @@ pinned: false
 
 # 🩺 Aarogya AI — Vernacular Health Assistant
 
-[![Live Demo](https://img.shields.io/badge/🚀_Live_Demo-Streamlit-red)](https://aarogya-ai-8gqvuucanpgm5vqmcrgyin.streamlit.app)](https://huggingface.co/spaces/karthik55555/aarogya-ai)
+[![Live Demo](https://img.shields.io/badge/🚀_Live_Demo-Streamlit-red)](https://aarogya-ai-8gqvuucanpgm5vqmcrgyin.streamlit.app)
 [![Python](https://img.shields.io/badge/Python-3.11-blue)]()
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.111-green)]()
 [![LangChain](https://img.shields.io/badge/LangChain-RAG-yellow)]()
