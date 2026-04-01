@@ -51,8 +51,8 @@ threading.Thread(target=keep_alive, daemon=True).start()
 st.set_page_config(
     page_title="Aarogya AI",
     page_icon="🩺",
-    layout="wide",
-    initial_sidebar_state="collapsed"  # ← change from "expanded"
+    layout="centered",           # ← change "wide" to "centered"
+    initial_sidebar_state="collapsed"
 )
 
 # ── CSS + Force sidebar open ──────────────────────────────────────
@@ -166,21 +166,37 @@ button[data-testid="collapsedControl"] {
 
 /* ── Mobile breakpoint ── */
 @media (max-width: 768px) {
-    .main .block-container {
-        padding: 1rem 0.75rem !important;
-        max-width: 100% !important;
-    }
-    .hero { padding: 16px !important; margin-bottom: 14px !important; }
-    .hero-title { font-size: 1.4rem !important; }
-    .hero-sub { font-size: 0.72rem !important; }
+    /* ── Main container — full width fix ── */
+.main .block-container {
+    padding: 1.5rem 2rem !important;
+    max-width: 100% !important;       /* ← was 1100px, causing the gap */
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    width: 100% !important;
+}
 
-    /* Make buttons taller for easier tapping */
-    .stButton > button {
-        min-height: 44px !important;
-        font-size: 0.85rem !important;
-    }
+/* ── Remove leftover sidebar ghost space ── */
+.main {
+    margin-left: 0 !important;
+    padding-left: 0 !important;
+}
 
-    audio { width: 100% !important; }
+/* ── Ensure content stretches properly ── */
+.block-container > div {
+    max-width: 860px !important;      /* readable line width */
+    margin: 0 auto !important;        /* center it cleanly */
+}
+
+/* ── Fix chat messages width ── */
+.stChatMessage {
+    max-width: 100% !important;
+    width: 100% !important;
+}
+
+/* ── Chat input full width ── */
+.stChatInputContainer {
+    max-width: 100% !important;
+    width: 100% !important;
 }
 </script>
 """, unsafe_allow_html=True)
