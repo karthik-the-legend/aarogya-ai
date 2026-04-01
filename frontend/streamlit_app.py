@@ -150,15 +150,96 @@ html, body, [class*="css"] {
     margin-bottom: 12px !important;
 }
 
-/* ── Sidebar ── */
-section[data-testid="stSidebar"] {
-    background: #0d1424 !important;
-    border-right: 1px solid #1e293b !important;
+/* ── Sidebar — collapses properly ── */
+section[data-testid="stSidebar"][aria-expanded="true"] {
+    width: 21rem !important;
+    min-width: 21rem !important;
+    transition: width 0.3s ease !important;
 }
+
+section[data-testid="stSidebar"][aria-expanded="false"] {
+    width: 0px !important;
+    min-width: 0px !important;
+    overflow: hidden !important;
+    transition: width 0.3s ease !important;
+}
+
 section[data-testid="stSidebar"] .block-container {
     padding: 1.5rem 1rem !important;
 }
 
+/* ── Collapse/Expand toggle — ALWAYS visible and fixed ── */
+[data-testid="collapsedControl"] {
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    position: fixed !important;
+    top: 14px !important;
+    left: 14px !important;
+    z-index: 9999 !important;
+    background: #1e293b !important;
+    border: 1px solid #334155 !important;
+    border-radius: 50% !important;
+    width: 36px !important;
+    height: 36px !important;
+    align-items: center !important;
+    justify-content: center !important;
+    cursor: pointer !important;
+    transition: background 0.2s ease !important;
+}
+
+[data-testid="collapsedControl"]:hover {
+    background: #3b82f6 !important;
+    border-color: #3b82f6 !important;
+}
+
+[data-testid="collapsedControl"]:active {
+    transform: scale(0.93) !important;
+}
+
+/* ── Push main content right only when sidebar is OPEN ── */
+section[data-testid="stSidebar"][aria-expanded="true"] ~ .main {
+    margin-left: 21rem !important;
+    transition: margin-left 0.3s ease !important;
+}
+
+section[data-testid="stSidebar"][aria-expanded="false"] ~ .main {
+    margin-left: 0rem !important;
+    transition: margin-left 0.3s ease !important;
+}
+
+/* ── Always leave space for the fixed toggle button ── */
+.main .block-container {
+    padding: 1.5rem 2rem 1.5rem 3.5rem !important;  /* left pad clears the button */
+    max-width: 1100px !important;
+}
+
+/* ── Mobile ── */
+@media (max-width: 768px) {
+    section[data-testid="stSidebar"][aria-expanded="true"] {
+        width: 85vw !important;
+        min-width: 260px !important;
+        position: fixed !important;   /* overlay, doesn't push content */
+        z-index: 1000 !important;
+        height: 100vh !important;
+    }
+
+    section[data-testid="stSidebar"][aria-expanded="true"] ~ .main {
+        margin-left: 0 !important;    /* content stays put on mobile */
+    }
+
+    .main .block-container {
+        padding: 1rem 1rem 1rem 3rem !important;
+        max-width: 100% !important;
+    }
+
+    [data-testid="collapsedControl"] {
+        top: 10px !important;
+        left: 10px !important;
+        width: 32px !important;
+        height: 32px !important;
+    }
+}
 /* ── Selectbox ── */
 .stSelectbox > div > div {
     background: #111827 !important;
