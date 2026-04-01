@@ -15,7 +15,7 @@ st.set_page_config(
     page_title="Aarogya AI",
     page_icon="🩺",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="collapsed"   # 👈 collapsed by default (better for mobile)
 )
 
 # ── Custom CSS ───────────────────────────────────────────────────
@@ -230,6 +230,121 @@ section[data-testid="stSidebar"] .block-container {
 hr {
     border-color: #1e293b !important;
 }
+            
+/* ── Mobile Breakpoints ── */
+
+/* Tablets and below (≤768px) */
+@media (max-width: 768px) {
+
+    /* Shrink main container padding */
+    .main .block-container {
+        padding: 1rem 0.75rem !important;
+        max-width: 100% !important;
+    }
+
+    /* Hero section */
+    .hero {
+        padding: 18px 16px !important;
+        margin-bottom: 16px !important;
+    }
+    .hero-title {
+        font-size: 1.4rem !important;
+    }
+    .hero-sub {
+        font-size: 0.75rem !important;
+        line-height: 1.6 !important;
+    }
+
+    /* Stat row — stack vertically on mobile */
+    .stat-row {
+        flex-wrap: wrap !important;
+        gap: 8px !important;
+    }
+    .stat-card {
+        flex: 1 1 calc(50% - 8px) !important;
+        min-width: 100px !important;
+    }
+    .stat-num {
+        font-size: 1.2rem !important;
+    }
+
+    /* Source cards — smaller font */
+    .source-card {
+        font-size: 0.7rem !important;
+        padding: 8px 10px !important;
+    }
+
+    /* Badges */
+    .badge-green, .badge-yellow, .badge-red {
+        font-size: 0.7rem !important;
+        padding: 3px 10px !important;
+    }
+
+    /* Chat messages */
+    .stChatMessage {
+        margin-bottom: 8px !important;
+        border-radius: 10px !important;
+    }
+
+    /* Chat input */
+    .stChatInputContainer {
+        border-radius: 10px !important;
+    }
+
+    /* Hide sidebar toggle label on mobile */
+    section[data-testid="stSidebar"] {
+        min-width: 260px !important;
+        max-width: 80vw !important;
+    }
+
+    /* Audio player */
+    audio {
+        width: 100% !important;
+        height: 36px !important;
+    }
+
+    /* File uploader */
+    .stFileUploader {
+        font-size: 0.8rem !important;
+    }
+
+    /* Buttons */
+    .stButton > button {
+        font-size: 0.78rem !important;
+        padding: 6px 10px !important;
+    }
+
+    /* Expanders */
+    .streamlit-expanderHeader {
+        font-size: 0.78rem !important;
+    }
+}
+
+/* Small phones (≤480px) */
+@media (max-width: 480px) {
+
+    .hero-title {
+        font-size: 1.2rem !important;
+    }
+    .hero-sub {
+        font-size: 0.68rem !important;
+    }
+
+    /* Stack stat cards fully on tiny screens */
+    .stat-card {
+        flex: 1 1 100% !important;
+    }
+
+    /* Reduce hero padding further */
+    .hero {
+        padding: 14px 12px !important;
+    }
+
+    /* Shrink sidebar icon */
+    section[data-testid="stSidebar"] {
+        max-width: 90vw !important;
+    }
+            
 </style>
 """, unsafe_allow_html=True)
 
@@ -377,14 +492,15 @@ with st.sidebar:
 
     # Stats
     avg_ms = st.session_state.total_ms // max(st.session_state.query_count, 1)
+    # Find this in your sidebar stats section and update the grid style:
     st.markdown(f"""
     <div style="font-size:0.78rem;color:#64748b;font-weight:600;margin-bottom:8px">SESSION STATS</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-        <div style="background:#0f172a;border:1px solid #1e293b;border-radius:8px;padding:10px;text-align:center">
+    <div style="display:flex;flex-wrap:wrap;gap:8px">   <!-- 👈 flex-wrap instead of grid -->
+        <div style="flex:1;min-width:80px;background:#0f172a;border:1px solid #1e293b;border-radius:8px;padding:10px;text-align:center">
             <div style="font-size:1.3rem;font-weight:700;color:#60a5fa">{st.session_state.query_count}</div>
             <div style="font-size:0.65rem;color:#64748b">Queries</div>
         </div>
-        <div style="background:#0f172a;border:1px solid #1e293b;border-radius:8px;padding:10px;text-align:center">
+        <div style="flex:1;min-width:80px;background:#0f172a;border:1px solid #1e293b;border-radius:8px;padding:10px;text-align:center">
             <div style="font-size:1.3rem;font-weight:700;color:#a78bfa">{avg_ms}ms</div>
             <div style="font-size:0.65rem;color:#64748b">Avg Speed</div>
         </div>
