@@ -52,7 +52,7 @@ st.set_page_config(
     page_title="Aarogya AI",
     page_icon="🩺",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="collapsed"  # ← change from "expanded"
 )
 
 # ── CSS + Force sidebar open ──────────────────────────────────────
@@ -76,39 +76,112 @@ section[data-testid="stSidebar"] { background: #0d1424 !important; border-right:
 .stAlert { background: #ffd60010 !important; border: 1px solid #ffd60030 !important; border-radius: 10px !important; color: #ffd600 !important; }
 
 /* ── Force sidebar to always be visible and expanded ── */
+/* ── Sidebar — responsive, collapsible ── */
 section[data-testid="stSidebar"] {
-    width: 21rem !important;
-    min-width: 21rem !important;
-    transform: translateX(0px) !important;
-    display: block !important;
-    visibility: visible !important;
+    background: #0d1424 !important;
+    border-right: 1px solid #1e293b !important;
+    min-width: 260px !important;
+    max-width: 80vw !important;
 }
-/* Hide the collapse/expand toggle button entirely */
-button[data-testid="collapsedControl"],
-button[kind="header"] {
-    display: none !important;
+
+/* ── Sidebar toggle button — keep visible and styled ── */
+button[data-testid="collapsedControl"] {
+    background: #1e293b !important;
+    border: 1px solid #334155 !important;
+    border-radius: 50% !important;
+    color: #94a3b8 !important;
 }
-/* Prevent the main content from sliding under the sidebar */
-.main > div:first-child {
-    margin-left: 21rem !important;
+
+/* ── Touch-friendly button active state (works on mobile) ── */
+.stButton > button:active {
+    background: #3b82f6 !important;
+    color: #ffffff !important;
+    border-color: #3b82f6 !important;
+    transform: scale(0.97) !important;
+    transition: all 0.1s ease !important;
+}
+
+/* ── Also keep hover for desktop ── */
+.stButton > button:hover {
+    background: #334155 !important;
+    color: #e2e8f0 !important;
+    border-color: #475569 !important;
+    transition: all 0.2s ease !important;
+}
+
+/* ── Mobile breakpoint ── */
+@media (max-width: 768px) {
+    .main .block-container {
+        padding: 1rem 0.75rem !important;
+        max-width: 100% !important;
+    }
+    .hero { padding: 16px !important; margin-bottom: 14px !important; }
+    .hero-title { font-size: 1.4rem !important; }
+    .hero-sub { font-size: 0.72rem !important; }
+
+    /* Make buttons taller for easier tapping */
+    .stButton > button {
+        min-height: 44px !important;
+        font-size: 0.85rem !important;
+    }
+
+    audio { width: 100% !important; }
 }
 </style>
 
 <script>
 // Ensure sidebar is expanded on load and after reruns
-(function expandSidebar() {
-    function tryExpand() {
-        // Find and click the expand button if sidebar is collapsed
-        const collapsed = window.parent.document.querySelector(
-            '[data-testid="collapsedControl"]'
-        );
-        if (collapsed) { collapsed.click(); }
+/* ── Sidebar — responsive, collapsible ── */
+section[data-testid="stSidebar"] {
+    background: #0d1424 !important;
+    border-right: 1px solid #1e293b !important;
+    min-width: 260px !important;
+    max-width: 80vw !important;
+}
+
+/* ── Sidebar toggle button — keep visible and styled ── */
+button[data-testid="collapsedControl"] {
+    background: #1e293b !important;
+    border: 1px solid #334155 !important;
+    border-radius: 50% !important;
+    color: #94a3b8 !important;
+}
+
+/* ── Touch-friendly button active state (works on mobile) ── */
+.stButton > button:active {
+    background: #3b82f6 !important;
+    color: #ffffff !important;
+    border-color: #3b82f6 !important;
+    transform: scale(0.97) !important;
+    transition: all 0.1s ease !important;
+}
+
+/* ── Also keep hover for desktop ── */
+.stButton > button:hover {
+    background: #334155 !important;
+    color: #e2e8f0 !important;
+    border-color: #475569 !important;
+    transition: all 0.2s ease !important;
+}
+
+/* ── Mobile breakpoint ── */
+@media (max-width: 768px) {
+    .main .block-container {
+        padding: 1rem 0.75rem !important;
+        max-width: 100% !important;
     }
-    // Run immediately and after a short delay to catch post-rerun state
-    tryExpand();
-    setTimeout(tryExpand, 500);
-    setTimeout(tryExpand, 1500);
-})();
+    .hero { padding: 16px !important; margin-bottom: 14px !important; }
+    .hero-title { font-size: 1.4rem !important; }
+    .hero-sub { font-size: 0.72rem !important; }
+
+    /* Make buttons taller for easier tapping */
+    .stButton > button {
+        min-height: 44px !important;
+        font-size: 0.85rem !important;
+    }
+
+    audio { width: 100% !important; }
+}
 </script>
 """, unsafe_allow_html=True)
 
