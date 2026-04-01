@@ -18,6 +18,126 @@ st.set_page_config(
     initial_sidebar_state="collapsed"   # 👈 collapsed by default (better for mobile)
 )
 
+st.markdown("""
+<style>
+/* ── Hide Streamlit's native toggle — we replace it ── */
+[data-testid="collapsedControl"] {
+    display: none !important;
+}
+
+/* ── Fix sidebar slide ── */
+section[data-testid="stSidebar"][aria-expanded="true"] {
+    width: 21rem !important;
+    min-width: 21rem !important;
+    transition: all 0.3s ease !important;
+}
+section[data-testid="stSidebar"][aria-expanded="false"] {
+    width: 0px !important;
+    min-width: 0px !important;
+    overflow: hidden !important;
+    transition: all 0.3s ease !important;
+}
+
+/* ── Fix main content gap ── */
+.main .block-container {
+    padding: 1.5rem 2rem 1.5rem 2rem !important;
+    max-width: 1100px !important;
+    margin-left: 0 !important;
+}
+
+/* ── Our custom floating toggle button ── */
+#sidebar-toggle-btn {
+    position: fixed;
+    top: 14px;
+    left: 14px;
+    z-index: 99999;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: #1e293b;
+    border: 1px solid #334155;
+    color: #94a3b8;
+    font-size: 1.1rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 12px #0008;
+    transition: background 0.2s, transform 0.15s;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+}
+#sidebar-toggle-btn:hover {
+    background: #3b82f6;
+    border-color: #3b82f6;
+    color: #fff;
+}
+#sidebar-toggle-btn:active {
+    transform: scale(0.9);
+    background: #2563eb;
+    color: #fff;
+}
+
+@media (max-width: 768px) {
+    section[data-testid="stSidebar"][aria-expanded="true"] {
+        position: fixed !important;
+        z-index: 1000 !important;
+        height: 100vh !important;
+        width: 85vw !important;
+        min-width: 260px !important;
+    }
+    section[data-testid="stSidebar"][aria-expanded="false"] ~ .main {
+        margin-left: 0 !important;
+    }
+    .main .block-container {
+        padding: 1rem 0.75rem 1rem 0.75rem !important;
+        max-width: 100% !important;
+    }
+    #sidebar-toggle-btn {
+        top: 10px;
+        left: 10px;
+        width: 34px;
+        height: 34px;
+        font-size: 1rem;
+    }
+}
+</style>
+
+<!-- Custom toggle button -->
+<button id="sidebar-toggle-btn" onclick="toggleSidebar()" title="Toggle menu">☰</button>
+
+<script>
+function toggleSidebar() {
+    // Find Streamlit's real (hidden) sidebar button and click it
+    const doc = window.parent.document;
+    const btn = doc.querySelector('[data-testid="collapsedControl"]');
+    if (btn) {
+        btn.click();
+        // Flip the icon based on sidebar state
+        const sidebar = doc.querySelector('[data-testid="stSidebar"]');
+        const myBtn = document.getElementById('sidebar-toggle-btn');
+        if (myBtn) {
+            const isOpen = sidebar && sidebar.getAttribute('aria-expanded') === 'true';
+            myBtn.innerHTML = isOpen ? '✕' : '☰';
+        }
+    }
+}
+
+// Sync icon on page load
+window.addEventListener('load', function() {
+    setTimeout(function() {
+        const doc = window.parent.document;
+        const sidebar = doc.querySelector('[data-testid="stSidebar"]');
+        const myBtn = document.getElementById('sidebar-toggle-btn');
+        if (myBtn && sidebar) {
+            const isOpen = sidebar.getAttribute('aria-expanded') === 'true';
+            myBtn.innerHTML = isOpen ? '✕' : '☰';
+        }
+    }, 800);
+});
+</script>
+""", unsafe_allow_html=True)
+
 # ── Custom CSS ───────────────────────────────────────────────────
 st.markdown("""
 <style>
