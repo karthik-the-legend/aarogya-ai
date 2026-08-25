@@ -104,16 +104,41 @@ RERANK_MODEL = os.getenv("RERANK_MODEL", "cross-encoder/ms-marco-MiniLM-L-6-v2")
 # fallback path, where cross-encoder scores don't exist).
 MIN_EVIDENCE_THRESHOLD = float(os.getenv("MIN_EVIDENCE_THRESHOLD", "0.15"))
 
+# GROUNDING_ENABLED: post-generation claim-level verification. After
+# the LLM answers, a second LLM call (same Groq model, already loaded)
+# fact-checks the answer against the retrieved evidence and returns
+# SUPPORTED or UNSUPPORTED: <claim>. If UNSUPPORTED, the whole answer
+# is discarded and replaced with the standard refusal message rather
+# than silently keeping an unsupported medical claim.
+#
+# Two lighter, model-free alternatives were tried first and rejected on
+# real test failures (not in theory) — see the long comment on
+# RAGPipeline._build_verification_chain() in rag_pipeline.py for the
+# actual numbers: embedding similarity scored a deliberately fabricated
+# claim HIGHER than a genuinely correct sentence (topical closeness,
+# not truth, is what similarity measures), and a small NLI
+# cross-encoder correctly separated single well-formed sentences but
+# broke down on this project's real answer format (markdown bullet
+# lists), scoring genuinely correct fragments too low to reliably
+# outrank the same fabrication test.
+GROUNDING_ENABLED = os.getenv("GROUNDING_ENABLED", "true").lower() == "true"
+
 # ────────────────────────────────────────────────────────────────
-# SECTION 6: LLM (Gemini Flash)
+# SECTION 6: LLM (Groq)
 # ────────────────────────────────────────────────────────────────
-LLM_MODEL = "gemini-2.0-flash-lite"  # free tier: 15 req/min
+LLM_MODEL = "openai/gpt-oss-20b"  # llama-3.1-8b-instant was deprecated by Groq
 LLM_TEMPERATURE = 0.1  # 0.0 = deterministic, 1.0 = creative
 # Medical use: always keep below 0.2
-LLM_MAX_TOKENS = 512  # response length cap
-LLM_MODEL = "openai/gpt-oss-20b"  # llama-3.1-8b-instant was deprecated by Groq
-LLM_TEMPERATURE = 0.1
-LLM_MAX_TOKENS = 512
+
+# LLM_MAX_TOKENS: gpt-oss-20b is a reasoning model — it spends part of
+# this budget on internal chain-of-thought before writing the visible
+# answer. At 512, occasionally observed a query burn its whole budget
+# on reasoning and return an EMPTY completion (confirmed directly: same
+# prompt re-run immediately afterward produced a normal answer, so this
+# is a token-budget issue, not a content/evidence problem). Raised to
+# give reasoning more headroom; doesn't fully eliminate the risk since
+# reasoning length isn't capped separately, but meaningfully reduces it.
+LLM_MAX_TOKENS = 1024
 
 # ────────────────────────────────────────────────────────────────
 # SECTION 7: WHISPER STT

@@ -26,6 +26,7 @@ from config import (
     RERANK_MODEL,
     HYBRID_BM25_ENABLED,
     MIN_EVIDENCE_THRESHOLD,
+    GROUNDING_ENABLED,
     LLM_MODEL,
     LLM_TEMPERATURE,
     LLM_MAX_TOKENS,
@@ -92,6 +93,7 @@ class RAGPipeline:
         self.reranker = self._load_reranker()
         self.llm = self._load_llm()
         self.chain = self._build_chain()
+        self.verification_chain = self._build_verification_chain()
         self.source_registry = _load_source_registry()
         print("[RAGPipeline] Ready.")
 
@@ -242,6 +244,89 @@ Your response (in {language}):"""
         # the sources list), querying FAISS twice per request.
         return prompt | self.llm | StrOutputParser()
 
+    def _build_verification_chain(self):
+        """
+        Post-generation claim grounding, via a second LLM call rather
+        than a separate model. Tried two lighter alternatives first and
+        rejected both on real test failures, not in theory:
+
+        1. Embedding cosine similarity between each answer sentence and
+           the evidence: a deliberately fabricated claim ("dengue can be
+           cured within 24 hours with amoxicillin") scored 0.62 —
+           HIGHER than one of the genuinely correct sentences — because
+           it stays topically close to real evidence. That's exactly the
+           most dangerous class of hallucination and similarity can't
+           catch it.
+        2. A small NLI cross-encoder (cross-encoder/nli-MiniLM2-L6-H768):
+           correctly separated a real claim (entailment 0.94-0.99) from
+           that same fabrication (0.001) when both were single, complete
+           sentences. But real answers here are markdown bullet lists
+           ("include:\\n- Fever\\n- Headache"), and NLI models are
+           trained on single well-formed sentence hypotheses — bare
+           fragments like "Muscle, bone, or joint pain" scored only
+           0.08-0.22 even though they're 100% correct, well below any
+           threshold that would still catch real fabrications (~0.01-0.05).
+           Grouping bullets back into full sentences narrowed but didn't
+           close that gap. That model also cost another ~316MB on disk.
+        Both were verified against the SAME real answers before being
+        discarded — this isn't a guess.
+
+        The LLM (already loaded for generation) handles structured
+        content correctly because it actually reads the list rather than
+        scoring a fragment in isolation: verified SUPPORTED on 4 genuine
+        answers and correctly quoted the exact fabricated sentence on 3
+        injected-fabrication tests, at ~0.7-0.8s per check — faster than
+        the rejected NLI model and with no extra model weights.
+
+        Known failure mode, handled explicitly in _verify_grounding():
+        this LLM occasionally returns an empty completion (it spends its
+        token budget on internal reasoning before writing the final
+        answer — the same behaviour that caused an intermittent blank
+        answer earlier in this project). An empty/unparseable verdict is
+        NOT treated as "unsupported" — that would turn a Groq hiccup
+        into a false refusal. It's retried once, and if still
+        unparseable, the answer is kept (already passed the evidence
+        threshold) with a logged warning rather than silently trusted.
+        """
+        template = """You are a strict medical fact-checker, not the assistant that wrote the ANSWER.
+
+EVIDENCE:
+{context}
+
+ANSWER:
+{answer}
+
+Ignore generic disclaimers (e.g. "consult a doctor", "this is not a diagnosis") - they are not factual claims.
+Does the ANSWER assert any factual medical claim that is NOT supported by the EVIDENCE?
+Respond with exactly one line, nothing else:
+SUPPORTED
+or
+UNSUPPORTED: <the specific unsupported claim, quoted>"""
+
+        prompt = PromptTemplate(template=template, input_variables=["context", "answer"])
+        return prompt | self.llm | StrOutputParser()
+
+    def _verify_grounding(self, context: str, answer: str) -> tuple:
+        """
+        Returns (grounded, reason). grounded is False only when the
+        verifier explicitly says UNSUPPORTED; an empty/unparseable
+        response (see _build_verification_chain docstring) is treated
+        as grounded after one retry, not as a failure.
+        """
+        for attempt in range(2):
+            verdict = self.verification_chain.invoke({"context": context, "answer": answer}).strip()
+            if verdict:
+                break
+        else:
+            print("  [RAGPipeline] Grounding verifier returned empty twice — keeping answer, logging only.")
+            return True, "verifier_empty"
+
+        if verdict.upper().startswith("UNSUPPORTED"):
+            return False, verdict
+        if not verdict.upper().startswith("SUPPORTED"):
+            print(f"  [RAGPipeline] Unparseable grounding verdict, keeping answer: {verdict!r}")
+        return True, verdict
+
     def _rerank(self, query: str, docs: list) -> tuple:
         """
         Cross-encoder rerank of FAISS candidates down to TOP_K_RETRIEVAL.
@@ -295,7 +380,15 @@ Your response (in {language}):"""
                                      confidence (0-1), None if the
                                      reranker fell back to plain FAISS
             refused        : bool  — True if the LLM was never called
-                                     because evidence was insufficient
+                                     because evidence was insufficient,
+                                     OR its answer failed grounding
+            grounded       : bool  — False if a post-generation claim
+                                     check found something the LLM said
+                                     that the evidence doesn't support
+            grounding_verdict : str — the verifier's raw verdict, for
+                                     logging/evaluation (empty string if
+                                     grounding was skipped for this call,
+                                     e.g. the pre-generation refusal path)
         """
         candidates = self._retrieve_candidates(query)
         docs, evidence_score = self._rerank(query, candidates)
@@ -319,10 +412,34 @@ Your response (in {language}):"""
         context = "\n\n".join(doc.page_content for doc in docs)
         answer = self.chain.invoke({"context": context, "question": query, "language": language})
 
+        # Post-generation claim-level grounding: catches the case where
+        # retrieval found genuinely relevant chunks (so the evidence
+        # threshold above passed) but the LLM still asserted something
+        # those chunks don't actually support. Never silently keep an
+        # unsupported medical claim — replace the whole answer with the
+        # same refusal used for insufficient evidence.
+        grounded, verdict = True, ""
+        if GROUNDING_ENABLED:
+            grounded, verdict = self._verify_grounding(context, answer)
+
+        if not grounded:
+            print(f"  [RAGPipeline] Grounding check failed: {verdict}")
+            return {
+                "answer": REFUSAL_MESSAGE,
+                "sources": sources,
+                "n_chunks": len(docs),
+                "evidence_score": evidence_score,
+                "refused": True,
+                "grounded": False,
+                "grounding_verdict": verdict,
+            }
+
         return {
             "answer": answer,
             "sources": sources,
             "n_chunks": len(docs),
             "evidence_score": evidence_score,
             "refused": False,
+            "grounded": True,
+            "grounding_verdict": verdict,
         }
