@@ -52,6 +52,18 @@ RED_ONTOLOGY = [
             "மார்பு வலி",
             "ఛాతీ నొప్పి",
             "ಎದೆ ನೋವು",
+            # Code-switched (body-part word in the regional language +
+            # "pain"/"hurts" in English) — a real, common pattern for
+            # bilingual speakers, and NOT covered by either the pure-
+            # English or pure-regional-language phrases above, since
+            # those each assume one consistent language for the whole
+            # phrase. Confirmed the gap directly: "மார்பு pain இருக்கு"
+            # (from this project's own code-switching test cases)
+            # matched neither list before these were added.
+            "மார்பு pain", "மார்பு hurts",  # new — Tamil
+            "ఛాతీ pain", "ఛాతీ hurts",  # new — Telugu
+            "ಎದೆ pain", "ಎದೆ hurts",  # new — Kannada
+            "छाती pain", "सीने pain",  # new — Hindi
         ],
     },
     {
@@ -66,8 +78,14 @@ RED_ONTOLOGY = [
             "सांस नहीं", "सांस लेने में तकलीफ", "सांस नहीं आ रही",
             "மூச்சு திணறல்", "மூச்சு வரவில்லை",
             "శ్వాస తీసుకోలేను",
-            "ಉಸಿರಾಡಲು ಕಷ್ಟ", "ಉಸಿರಾಡಲು ಕಷ್ಟ ಆಗುತ್ತಿದೆ",
+            "ಉಸಿರಾಡಲು ಕಷ್ಟ",
             "choking", "can't swallow properly and choking",  # new
+            # Code-switched — same rationale as the chest-pain entries
+            # above (a regional-language breath word + an English
+            # symptom word, matching neither pure-language list).
+            "மூச்சு problem", "மூச்சு pain",  # new — Tamil
+            "శ్వాస problem",  # new — Telugu
+            "सांस problem",  # new — Hindi
         ],
     },
     {
