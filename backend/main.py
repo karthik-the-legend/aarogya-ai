@@ -72,21 +72,22 @@ async def ask_text(request: QueryRequest):
     """
     t0 = time.time()
 
-    # Step 1: Translate user query to English for FAISS
-    query_en = to_english(request.query, request.lang_code)
-    # Fallback unknown language to English
+    # Step 1: Fallback unknown language to English
     if request.lang_code not in SUPPORTED_LANGUAGES:
         request = request.model_copy(
             update={"lang_code": "en", "language_name": "English"}
         )
 
-    # Step 2: RAG — retrieve chunks + generate response
+    # Step 2: Translate user query to English for FAISS
+    query_en = to_english(request.query, request.lang_code)
+
+    # Step 3: RAG — retrieve chunks + generate response
     rag_result = app.state.rag.ask(query=query_en, language=request.language_name)
 
-    # Step 3: Run triage on query + LLM response
+    # Step 4: Run triage on query + LLM response
     triage_result = classify(request.query, rag_result["answer"])
 
-    # Step 4: Decide final answer
+    # Step 5: Decide final answer
     if triage_result.level == TriageLevel.RED:
         # Override LLM with emergency message
         final_answer = triage_result.message
