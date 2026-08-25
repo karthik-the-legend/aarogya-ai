@@ -69,7 +69,7 @@ LLM_MODEL = "gemini-2.0-flash-lite"  # free tier: 15 req/min
 LLM_TEMPERATURE = 0.1  # 0.0 = deterministic, 1.0 = creative
 # Medical use: always keep below 0.2
 LLM_MAX_TOKENS = 512  # response length cap
-LLM_MODEL = "llama-3.1-8b-instant"  # free on Groq
+LLM_MODEL = "openai/gpt-oss-20b"  # llama-3.1-8b-instant was deprecated by Groq
 LLM_TEMPERATURE = 0.1
 LLM_MAX_TOKENS = 512
 

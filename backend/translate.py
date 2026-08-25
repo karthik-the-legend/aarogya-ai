@@ -107,7 +107,9 @@ def from_english(text: str, target_lang: str = "en") -> str:
     # For responses: try Sarvam first (better Indian language quality)
     if sarvam_key and _REQUESTS_AVAILABLE:
         try:
-            result = _sarvam_translate(text, "en", target_lang, sarvam_key)
+            result = _translate_lines(
+                text, lambda line: _sarvam_translate(line, "en", target_lang, sarvam_key)
+            )
             logger.debug(f"[translate] en→{target_lang} via Sarvam")
             return result
         except Exception as e:
@@ -115,7 +117,9 @@ def from_english(text: str, target_lang: str = "en") -> str:
 
     # Fall back to Google Translate
     try:
-        result = _google_translate(text, source="en", target=target_lang)
+        result = _translate_lines(
+            text, lambda line: _google_translate(line, source="en", target=target_lang)
+        )
         logger.debug(f"[translate] en→{target_lang} via Google")
         return result
     except Exception as e:
@@ -124,6 +128,19 @@ def from_english(text: str, target_lang: str = "en") -> str:
 
 
 # ── Private Helper Functions ─────────────────────────────────────
+def _translate_lines(text: str, translate_line) -> str:
+    """
+    Translate multi-line text one line at a time, preserving line breaks.
+
+    Both Sarvam and Google's translate APIs collapse the whole input into
+    a single run-on paragraph, which destroys the LLM's markdown formatting
+    (bullet lists, headings). Translating line-by-line keeps the structure
+    intact so responses stay readable in the target language.
+    """
+    lines = text.split("\n")
+    return "\n".join(translate_line(line) if line.strip() else "" for line in lines)
+
+
 def _google_translate(text: str, source: str, target: str) -> str:
     """
     Translate using Google Translate via the deep-translator library.
