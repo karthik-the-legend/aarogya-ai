@@ -121,6 +121,8 @@ async def ask_text(request: QueryRequest):
         sources=[Source(**s) for s in rag_result["sources"]],
         latency_ms=round((time.time() - t0) * 1000),
         detected_language=request.lang_code,
+        evidence_score=rag_result.get("evidence_score"),
+        refused=rag_result.get("refused", False),
     )
 
 

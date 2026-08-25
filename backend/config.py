@@ -57,10 +57,34 @@ CHUNK_OVERLAP = 50  # words shared with previous chunk
 # ────────────────────────────────────────────────────────────────
 # SECTION 5: RETRIEVAL (RAG)
 # ────────────────────────────────────────────────────────────────
-# TOP_K_RETRIEVAL: how many chunks to retrieve per query
+# TOP_K_RETRIEVAL: how many chunks are FINALLY fed to the LLM.
 # Tested k=1 (misses context), k=3 (best), k=5 (dilutes prompt)
 TOP_K_RETRIEVAL = 3
 RETRIEVAL_TYPE = "similarity"  # "similarity" or "mmr" (diverse results)
+
+# RETRIEVAL_CANDIDATES_K: how many chunks FAISS returns BEFORE
+# reranking. Wider net than TOP_K_RETRIEVAL so the reranker has real
+# candidates to choose from instead of just re-sorting an already
+# narrow top-3.
+RETRIEVAL_CANDIDATES_K = int(os.getenv("RETRIEVAL_CANDIDATES_K", "10"))
+
+# RERANK_ENABLED: second-stage cross-encoder reranker over the FAISS
+# candidates. If the model fails to load (e.g. constrained deploy
+# environment), RAGPipeline falls back to plain FAISS-similarity
+# order automatically — see rag_pipeline.py _load_reranker().
+RERANK_ENABLED = os.getenv("RERANK_ENABLED", "true").lower() == "true"
+RERANK_MODEL = os.getenv("RERANK_MODEL", "cross-encoder/ms-marco-MiniLM-L-6-v2")
+
+# MIN_EVIDENCE_THRESHOLD: sigmoid-normalized (0-1) cross-encoder score
+# the TOP reranked chunk must clear before the LLM is even called.
+# Below this, the query is refused deterministically — cheaper and
+# more reliable than trusting the LLM's own "insufficient context"
+# instruction to fire every time. Calibrated against this project's
+# knowledge base: a clearly relevant passage scores ~0.99+, a clearly
+# irrelevant one scores ~0.00001 — 0.15 leaves wide margin either way.
+# Only enforced when reranking actually ran (not in the FAISS-only
+# fallback path, where cross-encoder scores don't exist).
+MIN_EVIDENCE_THRESHOLD = float(os.getenv("MIN_EVIDENCE_THRESHOLD", "0.15"))
 
 # ────────────────────────────────────────────────────────────────
 # SECTION 6: LLM (Gemini Flash)

@@ -238,6 +238,23 @@ def load_pipeline():
 
 pipeline = load_pipeline()
 
+# ── Source card rendering ────────────────────────────────────────
+def render_source_card(s: dict, show_content: bool = False) -> str:
+    """Shared HTML for a single citation card, used by every place a
+    source list is rendered. Shows the org (WHO/CDC/NIH) when the
+    chunk's metadata was matched against data/sources.txt."""
+    name = s["source"].split("\\")[-1].split("/")[-1]
+    org = s.get("organization", "")
+    org_html = f'<span style="color:#64748b"> · {org}</span>' if org else ""
+    content_html = ""
+    if show_content and s.get("content"):
+        content_html = f'<br><span style="color:#475569">{s["content"][:120]}...</span>'
+    return (
+        f'<div class="source-card"><strong>{name}</strong> · page {s["page"]}'
+        f'{org_html}{content_html}</div>'
+    )
+
+
 # ── Session state ────────────────────────────────────────────────
 if "messages"    not in st.session_state: st.session_state.messages    = []
 if "query_count" not in st.session_state: st.session_state.query_count = 0
@@ -296,6 +313,8 @@ def ask_pipeline(query: str, lang_code: str, language_name: str) -> dict:
             "triage_override": triage.override,
             "triage_category": triage.category,
             "sources"        : result["sources"],
+            "evidence_score" : result.get("evidence_score"),
+            "refused"        : result.get("refused", False),
             "latency_ms"     : int((time.time() - t0) * 1000),
         }
     except Exception as e:
@@ -397,8 +416,7 @@ for msg in st.session_state.messages:
             if sources:
                 with st.expander(f"📚 {len(sources)} source(s)"):
                     for s in sources:
-                        name = s['source'].split('\\')[-1].split('/')[-1]
-                        st.markdown(f'<div class="source-card"><strong>{name}</strong> · page {s["page"]}</div>', unsafe_allow_html=True)
+                        st.markdown(render_source_card(s), unsafe_allow_html=True)
             if msg.get("latency"):
                 st.caption(f"⏱️ {msg['latency']}ms")
 
@@ -449,8 +467,7 @@ if uploaded is not None:
                 if sources:
                     with st.expander(f"📚 {len(sources)} source(s)"):
                         for s in sources:
-                            name = s['source'].split('\\')[-1].split('/')[-1]
-                            st.markdown(f'<div class="source-card"><strong>{name}</strong> · page {s["page"]}</div>', unsafe_allow_html=True)
+                            st.markdown(render_source_card(s), unsafe_allow_html=True)
 
                 st.caption(f"⏱️ {latency}ms")
 
@@ -488,8 +505,7 @@ if query:
         if sources:
             with st.expander(f"📚 {len(sources)} source(s)", expanded=triage=="red"):
                 for s in sources:
-                    name = s['source'].split('\\')[-1].split('/')[-1]
-                    st.markdown(f'<div class="source-card"><strong>{name}</strong> · page {s["page"]}<br><span style="color:#475569">{s["content"][:120]}...</span></div>', unsafe_allow_html=True)
+                    st.markdown(render_source_card(s, show_content=True), unsafe_allow_html=True)
 
         st.caption(f"⏱️ {latency}ms")
 

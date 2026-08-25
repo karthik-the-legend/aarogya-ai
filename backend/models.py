@@ -64,6 +64,8 @@ class Source(BaseModel):
     source: str  # filename: "06_cdc_dengue_clinical.pdf"
     page: int  # page number (0-indexed)
     content: str  # first 200 chars of the chunk text
+    organization: str = ""  # e.g. "World Health Organization (WHO)"
+    title: str = ""  # e.g. "Dengue and Severe Dengue — Fact Sheet"
 
 
 # ── Response Models ──────────────────────────────────────────────
@@ -89,6 +91,8 @@ class QueryResponse(BaseModel):
     sources: List[Source]  # retrieved chunks for XAI
     latency_ms: int  # total pipeline time
     detected_language: Optional[str] = "en"  # ISO code
+    evidence_score: Optional[float] = None  # top reranked chunk confidence, 0-1
+    refused: bool = False  # True = insufficient evidence, LLM was never called
 
 
 class VoiceTranscript(BaseModel):
