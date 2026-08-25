@@ -52,64 +52,161 @@ st.set_page_config(
     page_title="Aarogya AI",
     page_icon="🩺",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="auto"
 )
 
-# ── CSS + Force sidebar open ──────────────────────────────────────
+# ── CSS + Force sidebar open on desktop ─────────────────────────────
 st.markdown("""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&display=swap');
-html, body, [class*="css"] { font-family: 'Sora', sans-serif !important; background-color: #0a0f1e !important; color: #e2e8f0 !important; }
-#MainMenu, footer, header { visibility: hidden; }
-.main .block-container { padding: 1.5rem 2rem !important; max-width: 1100px !important; }
-.hero { background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #0f172a 100%); border: 1px solid #1e40af33; border-radius: 16px; padding: 28px 32px; margin-bottom: 24px; }
-.hero-title { font-size: 2rem; font-weight: 700; background: linear-gradient(135deg, #60a5fa, #a78bfa, #34d399); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin: 0 0 6px 0; }
-.hero-sub { color: #94a3b8; font-size: 0.9rem; margin: 0; }
-.badge-green { background: #00c85318; color: #00c853; border: 1px solid #00c85340; padding: 4px 14px; border-radius: 100px; font-size: 0.75rem; font-weight: 600; display: inline-block; margin-top: 8px; }
-.badge-yellow { background: #ffd60018; color: #ffd600; border: 1px solid #ffd60040; padding: 4px 14px; border-radius: 100px; font-size: 0.75rem; font-weight: 600; display: inline-block; margin-top: 8px; }
-.badge-red { background: #ff174418; color: #ff1744; border: 1px solid #ff174440; padding: 4px 14px; border-radius: 100px; font-size: 0.75rem; font-weight: 600; display: inline-block; margin-top: 8px; }
-.source-card { background: #0f172a; border: 1px solid #1e293b; border-radius: 10px; padding: 10px 14px; margin-top: 8px; font-size: 0.78rem; color: #94a3b8; }
-.stChatMessage { background: #111827 !important; border: 1px solid #1e293b !important; border-radius: 12px !important; margin-bottom: 12px !important; }
-section[data-testid="stSidebar"] { background: #0d1424 !important; border-right: 1px solid #1e293b !important; }
-.stSelectbox > div > div { background: #111827 !important; border: 1px solid #1e293b !important; border-radius: 8px !important; }
-.stButton > button { background: #1e293b !important; color: #94a3b8 !important; border: 1px solid #334155 !important; border-radius: 8px !important; }
-.stAlert { background: #ffd60010 !important; border: 1px solid #ffd60030 !important; border-radius: 10px !important; color: #ffd600 !important; }
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 
-/* ── Force sidebar to always be visible and expanded ── */
+:root {
+    --bg:        #0a0f1e;
+    --bg-side:   #0d1424;
+    --card:      #111827;
+    --card-2:    #0f172a;
+    --border:    #1e293b;
+    --border-hi: #2d3f5c;
+    --text:      #e2e8f0;
+    --muted:     #94a3b8;
+    --muted-2:   #64748b;
+    --accent:    #3b82f6;
+    --accent-2:  #8b5cf6;
+    --green:     #00c853;
+    --yellow:    #ffd600;
+    --red:       #ff1744;
+}
+
+html, body, [class*="css"] { font-family: 'Sora', sans-serif !important; background-color: var(--bg) !important; color: var(--text) !important; }
+#MainMenu, footer, header { visibility: hidden; }
+.main .block-container { padding: 1.5rem 2rem 3rem !important; max-width: 1100px !important; }
+
+/* ── Thin dark scrollbar ── */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-hi); border-radius: 8px; }
+::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+
+/* ── Hero ── */
+.hero {
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 55%, #0f172a 100%);
+    border: 1px solid #1e40af40;
+    border-radius: 18px;
+    padding: 32px 36px;
+    margin-bottom: 24px;
+    box-shadow: 0 8px 30px -12px rgba(59, 130, 246, 0.25);
+}
+.hero::before {
+    content: '';
+    position: absolute;
+    top: -60%;
+    right: -8%;
+    width: 320px;
+    height: 320px;
+    background: radial-gradient(circle, #3b82f625 0%, transparent 70%);
+    border-radius: 50%;
+    pointer-events: none;
+}
+.hero::after {
+    content: '';
+    position: absolute;
+    bottom: -70%;
+    left: 10%;
+    width: 260px;
+    height: 260px;
+    background: radial-gradient(circle, #8b5cf620 0%, transparent 70%);
+    border-radius: 50%;
+    pointer-events: none;
+}
+.hero-title { position: relative; font-size: clamp(1.5rem, 4vw, 2.1rem); font-weight: 700; background: linear-gradient(135deg, #60a5fa, #a78bfa, #34d399); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin: 0 0 10px 0; }
+.hero-sub { position: relative; color: var(--muted); font-size: 0.88rem; margin: 0 0 12px 0; }
+.hero-chips { position: relative; display: flex; flex-wrap: wrap; gap: 8px; }
+.hero-chip { background: #ffffff0d; border: 1px solid #ffffff1a; color: #cbd5e1; padding: 3px 12px; border-radius: 100px; font-size: 0.72rem; font-weight: 500; }
+
+/* ── Triage badges ── */
+.badge-green, .badge-yellow, .badge-red {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 5px 14px 5px 10px; border-radius: 100px;
+    font-size: 0.75rem; font-weight: 600; margin-top: 10px;
+    letter-spacing: 0.01em;
+}
+.badge-green  { background: #00c85316; color: var(--green);  border: 1px solid #00c85345; box-shadow: 0 0 16px -6px #00c85360; }
+.badge-yellow { background: #ffd60016; color: var(--yellow); border: 1px solid #ffd60045; box-shadow: 0 0 16px -6px #ffd60060; }
+.badge-red    { background: #ff174416; color: var(--red);    border: 1px solid #ff174450; box-shadow: 0 0 18px -4px #ff174480; animation: badgePulse 1.6s ease-in-out infinite; }
+@keyframes badgePulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.72; } }
+
+/* ── Source citation cards ── */
+.source-card {
+    background: var(--card-2); border: 1px solid var(--border); border-radius: 10px;
+    padding: 10px 14px; margin-top: 8px; font-size: 0.78rem; color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+    transition: border-color 0.15s ease, transform 0.15s ease;
+}
+.source-card:hover { border-color: var(--border-hi); transform: translateX(2px); }
+.source-card strong { color: #60a5fa; font-family: 'Sora', sans-serif; }
+
+/* ── Chat messages ── */
+.stChatMessage {
+    background: var(--card) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 14px !important;
+    margin-bottom: 14px !important;
+    padding: 4px 2px !important;
+    transition: border-color 0.15s ease;
+}
+.stChatMessage:hover { border-color: var(--border-hi) !important; }
+.stChatMessage p { line-height: 1.65 !important; }
+.stChatMessage ul, .stChatMessage ol { line-height: 1.65 !important; padding-left: 1.3em !important; margin: 0.4em 0 !important; }
+.stChatMessage li { margin-bottom: 0.25em !important; }
+
+/* ── Sidebar ── */
 section[data-testid="stSidebar"] {
-    width: 21rem !important;
-    min-width: 21rem !important;
-    transform: translateX(0px) !important;
-    display: block !important;
-    visibility: visible !important;
+    background: var(--bg-side) !important;
+    border-right: 1px solid var(--border) !important;
 }
-/* Hide the collapse/expand toggle button entirely */
-button[data-testid="collapsedControl"],
-button[kind="header"] {
-    display: none !important;
+section[data-testid="stSidebar"] > div { position: relative; }
+section[data-testid="stSidebar"] > div::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    background: linear-gradient(90deg, #60a5fa, #a78bfa, #34d399);
 }
-/* Prevent the main content from sliding under the sidebar */
-.main > div:first-child {
-    margin-left: 21rem !important;
+
+/* ── Form controls ── */
+.stSelectbox > div > div { background: var(--card) !important; border: 1px solid var(--border) !important; border-radius: 8px !important; transition: border-color 0.15s ease; }
+.stSelectbox > div > div:hover { border-color: var(--border-hi) !important; }
+.stButton > button {
+    background: var(--border) !important; color: var(--muted) !important;
+    border: 1px solid #334155 !important; border-radius: 8px !important;
+    transition: all 0.15s ease !important;
+}
+.stButton > button:hover { background: #253449 !important; color: var(--text) !important; border-color: var(--accent) !important; transform: translateY(-1px); }
+.stAlert { background: #ffd60010 !important; border: 1px solid #ffd60030 !important; border-radius: 10px !important; color: var(--yellow) !important; }
+
+/* ── Chat input ── */
+[data-testid="stChatInput"] { border-radius: 14px !important; }
+[data-testid="stChatInput"]:focus-within { box-shadow: 0 0 0 2px #3b82f655 !important; }
+
+/* ── Status pill ── */
+.status-pill {
+    background: #00c85315; border: 1px solid #00c85340; border-radius: 8px;
+    padding: 8px 12px; font-size: 0.78rem; color: var(--green); text-align: center;
+    box-shadow: 0 0 14px -6px #00c85350;
+}
+
+/* ── Sidebar sizing on wide screens (Streamlit's own "auto" state already
+   handles expand-on-desktop / collapse-on-mobile — we only set width) ── */
+@media (min-width: 769px) {
+    section[data-testid="stSidebar"] { width: 21rem !important; min-width: 21rem !important; }
+}
+
+/* ── Mobile: tighter padding so chat isn't squeezed ── */
+@media (max-width: 768px) {
+    .hero { padding: 20px 20px; }
+    .main .block-container { padding: 1rem 1rem 3rem !important; }
 }
 </style>
-
-<script>
-// Ensure sidebar is expanded on load and after reruns
-(function expandSidebar() {
-    function tryExpand() {
-        // Find and click the expand button if sidebar is collapsed
-        const collapsed = window.parent.document.querySelector(
-            '[data-testid="collapsedControl"]'
-        );
-        if (collapsed) { collapsed.click(); }
-    }
-    // Run immediately and after a short delay to catch post-rerun state
-    tryExpand();
-    setTimeout(tryExpand, 500);
-    setTimeout(tryExpand, 1500);
-})();
-</script>
 """, unsafe_allow_html=True)
 
 # ── Constants ────────────────────────────────────────────────────
@@ -161,10 +258,30 @@ def text_to_speech(text: str, lang_code: str) -> bytes:
 # ── Query function ────────────────────────────────────────────────
 def ask_pipeline(query: str, lang_code: str, language_name: str) -> dict:
     try:
-        t0       = time.time()
+        t0 = time.time()
+
+        # PRE-triage: check the raw query BEFORE any RAG/LLM call.
+        # An obvious emergency never reaches the LLM — it's a wasted,
+        # slower round-trip for a response that gets thrown away
+        # anyway, and it delays a life-critical instruction.
+        pre_triage = classify(query)
+        if pre_triage.level == TriageLevel.RED:
+            return {
+                "answer"         : pre_triage.message,
+                "triage_level"   : pre_triage.level.value,
+                "triage_override": pre_triage.override,
+                "triage_category": pre_triage.category,
+                "sources"        : [],
+                "latency_ms"     : int((time.time() - t0) * 1000),
+            }
+
         query_en = to_english(query, lang_code)
         result   = pipeline.ask(query_en, language_name)
-        triage   = classify(query, result["answer"])
+
+        # POST-triage: second safety net — also scans the LLM's own
+        # answer, in case retrieved evidence surfaces something the
+        # raw query alone didn't.
+        triage = classify(query, result["answer"])
 
         if triage.level == TriageLevel.RED:
             final_answer = triage.message
@@ -177,6 +294,7 @@ def ask_pipeline(query: str, lang_code: str, language_name: str) -> dict:
             "answer"         : final_answer,
             "triage_level"   : triage.level.value,
             "triage_override": triage.override,
+            "triage_category": triage.category,
             "sources"        : result["sources"],
             "latency_ms"     : int((time.time() - t0) * 1000),
         }
@@ -199,11 +317,11 @@ with st.sidebar:
     </div>
     """, unsafe_allow_html=True)
 
-    st.markdown('<div style="background:#00c85315;border:1px solid #00c85340;border-radius:8px;padding:8px 12px;font-size:0.78rem;color:#00c853;text-align:center">● Pipeline Ready</div>', unsafe_allow_html=True)
+    st.markdown('<div class="status-pill">● Pipeline Ready</div>', unsafe_allow_html=True)
     st.markdown("<br>", unsafe_allow_html=True)
 
     st.markdown('<div style="font-size:0.78rem;color:#64748b;font-weight:600;margin-bottom:6px">LANGUAGE</div>', unsafe_allow_html=True)
-    selected_lang_display = st.selectbox("", options=list(LANG_MAP.keys()), label_visibility="collapsed")
+    selected_lang_display = st.selectbox("Language", options=list(LANG_MAP.keys()), label_visibility="collapsed")
     lang_code     = LANG_MAP[selected_lang_display]
     language_name = selected_lang_display.split(" ", 1)[1]
 
@@ -259,7 +377,12 @@ with st.sidebar:
 st.markdown(f"""
 <div class="hero">
     <div class="hero-title">🩺 Aarogya AI</div>
-    <p class="hero-sub">RAG-powered health assistant · WHO · CDC · NIH · Hindi · Tamil · Telugu · Kannada</p>
+    <p class="hero-sub">Grounded health answers from WHO, CDC & NIH — in your own language</p>
+    <div class="hero-chips">
+        <span class="hero-chip">📚 WHO · CDC · NIH sourced</span>
+        <span class="hero-chip">🗣️ Hindi · Tamil · Telugu · Kannada</span>
+        <span class="hero-chip">🚨 Emergency triage built in</span>
+    </div>
 </div>
 """, unsafe_allow_html=True)
 

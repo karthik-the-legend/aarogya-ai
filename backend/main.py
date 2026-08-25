@@ -78,16 +78,33 @@ async def ask_text(request: QueryRequest):
             update={"lang_code": "en", "language_name": "English"}
         )
 
-    # Step 2: Translate user query to English for FAISS
+    # Step 2: PRE-triage on the raw query, before RAG/LLM ever run.
+    # An obvious emergency is answered immediately — it never pays for
+    # (or waits on) a RAG+LLM round-trip whose output would be thrown
+    # away anyway.
+    pre_triage = classify(request.query)
+    if pre_triage.level == TriageLevel.RED:
+        return QueryResponse(
+            answer=pre_triage.message,
+            triage_level=pre_triage.level.value,
+            triage_override=pre_triage.override,
+            sources=[],
+            latency_ms=round((time.time() - t0) * 1000),
+            detected_language=request.lang_code,
+        )
+
+    # Step 3: Translate user query to English for FAISS
     query_en = to_english(request.query, request.lang_code)
 
-    # Step 3: RAG — retrieve chunks + generate response
+    # Step 4: RAG — retrieve chunks + generate response
     rag_result = app.state.rag.ask(query=query_en, language=request.language_name)
 
-    # Step 4: Run triage on query + LLM response
+    # Step 5: POST-triage — second safety net, also scans the LLM's
+    # own answer in case retrieved evidence surfaces something the
+    # raw query alone didn't.
     triage_result = classify(request.query, rag_result["answer"])
 
-    # Step 5: Decide final answer
+    # Step 6: Decide final answer
     if triage_result.level == TriageLevel.RED:
         # Override LLM with emergency message
         final_answer = triage_result.message
