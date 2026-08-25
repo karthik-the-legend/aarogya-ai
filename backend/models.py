@@ -93,6 +93,8 @@ class QueryResponse(BaseModel):
     detected_language: Optional[str] = "en"  # ISO code
     evidence_score: Optional[float] = None  # top reranked chunk confidence, 0-1
     refused: bool = False  # True = insufficient evidence, LLM was never called
+    grounded: Optional[bool] = None  # False = post-generation claim check failed
+    intent: Optional[str] = None  # detected MedicalIntent value, e.g. "medication"
 
 
 class VoiceTranscript(BaseModel):

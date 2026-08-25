@@ -20,6 +20,7 @@ sys.path.insert(0, 'backend')
 from rag_pipeline import RAGPipeline
 from triage import classify, TriageLevel
 from translate import to_english, from_english
+from observability import new_request_id, log_request
 
 import warnings
 warnings.filterwarnings("ignore", message=".*torchvision.*")
@@ -255,6 +256,51 @@ def render_source_card(s: dict, show_content: bool = False) -> str:
     )
 
 
+LANG_NAMES = {"hi": "Hindi", "ta": "Tamil", "te": "Telugu", "kn": "Kannada", "en": "English"}
+INTENT_LABELS = {
+    "symptom": "Symptom check", "disease_information": "Disease information",
+    "medication": "Medication safety", "first_aid": "First aid",
+    "prevention": "Prevention", "emergency": "Emergency",
+    "child_health": "Child health", "pregnancy": "Pregnancy",
+    "elderly_health": "Elderly health", "chronic_condition": "Chronic condition",
+    "nutrition": "Nutrition", "vaccination": "Vaccination", "hygiene": "Hygiene",
+    "general_health": "General health", "unknown": "Unknown",
+}
+
+
+def render_explainability(msg: dict) -> None:
+    """
+    'Why this answer?' panel — task 28's explainability requirement.
+    Shows the automated reasoning metadata (language, intent, risk
+    level, evidence confidence, whether emergency override fired) —
+    never hidden chain-of-thought, just the same signals that already
+    drove the pipeline's own decisions.
+    """
+    triage_level = msg.get("triage") or msg.get("triage_level", "green")
+    intent = msg.get("intent")
+    lang = msg.get("detected_lang")
+    evidence_score = msg.get("evidence_score")
+    grounded = msg.get("grounded")
+
+    if intent is None and evidence_score is None and lang is None:
+        return  # nothing to show (e.g. an error response)
+
+    rows = []
+    if lang:
+        rows.append(f"**Detected language:** {LANG_NAMES.get(lang, lang)}")
+    if intent:
+        rows.append(f"**Query type:** {INTENT_LABELS.get(intent, intent)}")
+    rows.append(f"**Risk level:** {triage_level.upper()}"
+                + (" — emergency override, answer replaced" if triage_level == "red" else ""))
+    if evidence_score is not None:
+        rows.append(f"**Evidence confidence:** {evidence_score:.0%}")
+    if grounded is not None:
+        rows.append(f"**Fact-checked against sources:** {'✅ passed' if grounded else '⚠️ failed — answer withheld'}")
+
+    with st.expander("🔍 Why this answer?"):
+        st.markdown("\n\n".join(rows))
+
+
 # ── Session state ────────────────────────────────────────────────
 if "messages"    not in st.session_state: st.session_state.messages    = []
 if "query_count" not in st.session_state: st.session_state.query_count = 0
@@ -281,15 +327,27 @@ def ask_pipeline(query: str, lang_code: str, language_name: str) -> dict:
         # An obvious emergency never reaches the LLM — it's a wasted,
         # slower round-trip for a response that gets thrown away
         # anyway, and it delays a life-critical instruction.
+        request_id = new_request_id()
+
         pre_triage = classify(query)
         if pre_triage.level == TriageLevel.RED:
+            latency_ms = int((time.time() - t0) * 1000)
+            log_request(
+                request_id, lang_code, "emergency", pre_triage.level.value,
+                pre_triage.override, None, None, False, 0, [], latency_ms,
+            )
             return {
                 "answer"         : pre_triage.message,
                 "triage_level"   : pre_triage.level.value,
                 "triage_override": pre_triage.override,
                 "triage_category": pre_triage.category,
                 "sources"        : [],
-                "latency_ms"     : int((time.time() - t0) * 1000),
+                "evidence_score" : None,
+                "refused"        : False,
+                "grounded"       : None,
+                "intent"         : "emergency",
+                "detected_lang"  : lang_code,
+                "latency_ms"     : latency_ms,
             }
 
         query_en = to_english(query, lang_code)
@@ -307,6 +365,14 @@ def ask_pipeline(query: str, lang_code: str, language_name: str) -> dict:
             if triage.level.value == "yellow":
                 final_answer += f"\n\n⚠️ Please see a doctor within 24 hours."
 
+        latency_ms = int((time.time() - t0) * 1000)
+        source_files = [s["source"].split("\\")[-1].split("/")[-1] for s in result["sources"]]
+        log_request(
+            request_id, lang_code, result.get("intent"), triage.level.value,
+            triage.override, result.get("evidence_score"), result.get("grounded"),
+            result.get("refused", False), len(result["sources"]), source_files, latency_ms,
+        )
+
         return {
             "answer"         : final_answer,
             "triage_level"   : triage.level.value,
@@ -315,7 +381,11 @@ def ask_pipeline(query: str, lang_code: str, language_name: str) -> dict:
             "sources"        : result["sources"],
             "evidence_score" : result.get("evidence_score"),
             "refused"        : result.get("refused", False),
-            "latency_ms"     : int((time.time() - t0) * 1000),
+            "grounded"       : result.get("grounded"),
+            "intent"         : result.get("intent"),
+            "entities"       : result.get("entities"),
+            "detected_lang"  : lang_code,
+            "latency_ms"     : latency_ms,
         }
     except Exception as e:
         return {
@@ -417,6 +487,7 @@ for msg in st.session_state.messages:
                 with st.expander(f"📚 {len(sources)} source(s)"):
                     for s in sources:
                         st.markdown(render_source_card(s), unsafe_allow_html=True)
+            render_explainability(msg)
             if msg.get("latency"):
                 st.caption(f"⏱️ {msg['latency']}ms")
 
@@ -469,6 +540,8 @@ if uploaded is not None:
                         for s in sources:
                             st.markdown(render_source_card(s), unsafe_allow_html=True)
 
+                render_explainability(result)
+
                 st.caption(f"⏱️ {latency}ms")
 
                 audio_bytes = text_to_speech(answer, detected)
@@ -507,6 +580,8 @@ if query:
                 for s in sources:
                     st.markdown(render_source_card(s, show_content=True), unsafe_allow_html=True)
 
+        render_explainability(result)
+
         st.caption(f"⏱️ {latency}ms")
 
         if auto_tts and triage != "red":
@@ -524,7 +599,9 @@ if query:
 
     st.session_state.messages.append({
         "role": "assistant", "content": answer,
-        "triage": triage, "latency": latency, "sources": sources
+        "triage": triage, "latency": latency, "sources": sources,
+        "intent": result.get("intent"), "detected_lang": result.get("detected_lang"),
+        "evidence_score": result.get("evidence_score"), "grounded": result.get("grounded"),
     })
     st.session_state.query_count += 1
     st.session_state.total_ms    += latency

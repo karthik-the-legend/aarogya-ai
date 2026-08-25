@@ -179,3 +179,17 @@ SUPPORTED_LANGUAGES = {
 API_HOST = "0.0.0.0"  # accept connections from any IP
 API_PORT = 8000
 DEBUG = os.getenv("ENVIRONMENT", "development") == "development"
+
+# ────────────────────────────────────────────────────────────────
+# SECTION 11: OBSERVABILITY & PRIVACY
+# ────────────────────────────────────────────────────────────────
+# LOGGING_ENABLED: structured JSONL request log (logs/requests.jsonl,
+# gitignored, local-only). One line per request: anonymized request
+# id, detected language, intent, triage level, evidence confidence,
+# grounding result, final action, latency, source filenames+pages.
+#
+# Deliberately NEVER logged, even when this is on: the user's actual
+# question text, the generated answer text, or any name/phone/address
+# — health questions are sensitive by default. See
+# backend/observability.py log_request() for the exact field list.
+LOGGING_ENABLED = os.getenv("LOGGING_ENABLED", "true").lower() == "true"

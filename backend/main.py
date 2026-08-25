@@ -28,6 +28,7 @@ from rag_pipeline import RAGPipeline
 from triage import classify, TriageLevel
 from voice_handler import transcribe_bytes, load_whisper_model
 from translate import to_english, from_english
+from observability import new_request_id, log_request
 from config import DATA_DIR, SUPPORTED_LANGUAGES
 
 
@@ -71,6 +72,7 @@ async def ask_text(request: QueryRequest):
     Flow: translate → FAISS → LLM → triage → translate back
     """
     t0 = time.time()
+    request_id = new_request_id()
 
     # Step 1: Fallback unknown language to English
     if request.lang_code not in SUPPORTED_LANGUAGES:
@@ -84,13 +86,19 @@ async def ask_text(request: QueryRequest):
     # away anyway.
     pre_triage = classify(request.query)
     if pre_triage.level == TriageLevel.RED:
+        latency_ms = round((time.time() - t0) * 1000)
+        log_request(
+            request_id, request.lang_code, "emergency", pre_triage.level.value,
+            pre_triage.override, None, None, False, 0, [], latency_ms,
+        )
         return QueryResponse(
             answer=pre_triage.message,
             triage_level=pre_triage.level.value,
             triage_override=pre_triage.override,
             sources=[],
-            latency_ms=round((time.time() - t0) * 1000),
+            latency_ms=latency_ms,
             detected_language=request.lang_code,
+            intent="emergency",
         )
 
     # Step 3: Translate user query to English for FAISS
@@ -114,15 +122,25 @@ async def ask_text(request: QueryRequest):
         if triage_result.level == TriageLevel.YELLOW:
             final_answer += f"\n\n{triage_result.message}"
 
+    latency_ms = round((time.time() - t0) * 1000)
+    source_files = [s["source"].split("\\")[-1].split("/")[-1] for s in rag_result["sources"]]
+    log_request(
+        request_id, request.lang_code, rag_result.get("intent"), triage_result.level.value,
+        triage_result.override, rag_result.get("evidence_score"), rag_result.get("grounded"),
+        rag_result.get("refused", False), len(rag_result["sources"]), source_files, latency_ms,
+    )
+
     return QueryResponse(
         answer=final_answer,
         triage_level=triage_result.level.value,
         triage_override=triage_result.override,
         sources=[Source(**s) for s in rag_result["sources"]],
-        latency_ms=round((time.time() - t0) * 1000),
+        latency_ms=latency_ms,
         detected_language=request.lang_code,
         evidence_score=rag_result.get("evidence_score"),
         refused=rag_result.get("refused", False),
+        grounded=rag_result.get("grounded"),
+        intent=rag_result.get("intent"),
     )
 
 
