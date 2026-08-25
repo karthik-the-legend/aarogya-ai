@@ -62,11 +62,29 @@ CHUNK_OVERLAP = 50  # words shared with previous chunk
 TOP_K_RETRIEVAL = 3
 RETRIEVAL_TYPE = "similarity"  # "similarity" or "mmr" (diverse results)
 
-# RETRIEVAL_CANDIDATES_K: how many chunks FAISS returns BEFORE
-# reranking. Wider net than TOP_K_RETRIEVAL so the reranker has real
-# candidates to choose from instead of just re-sorting an already
-# narrow top-3.
+# RETRIEVAL_CANDIDATES_K: how many chunks FAISS (and BM25, see below)
+# each return BEFORE reranking. Wider net than TOP_K_RETRIEVAL so the
+# reranker has real candidates to choose from instead of just
+# re-sorting an already narrow top-3.
 RETRIEVAL_CANDIDATES_K = int(os.getenv("RETRIEVAL_CANDIDATES_K", "10"))
+
+# HYBRID_BM25_ENABLED: also retrieve RETRIEVAL_CANDIDATES_K candidates
+# via BM25 (lexical/keyword search) alongside the dense FAISS search,
+# union both into one candidate pool before reranking.
+#
+# Why: dense embedding search can bury a short, specific fact (a drug
+# name, a dosage) inside a longer, topically-mixed chunk, because the
+# chunk's overall embedding gets pulled toward whatever dominates it.
+# Confirmed on this exact knowledge base — "Can I take ibuprofen for
+# dengue?" did not surface the chunk containing "avoid ibuprofen and
+# aspirin" even in FAISS's top-30 candidates, despite that chunk
+# existing in the index. BM25 ranked the same chunk #2 out of 87,
+# because it matches the literal term "ibuprofen" directly. Reranking
+# the union of both retrieval methods correctly promoted it to #1
+# with evidence_score 0.75 (was refused at 0.03 with dense-only
+# retrieval). If BM25 can't be built for any reason, RAGPipeline falls
+# back to dense-only retrieval automatically.
+HYBRID_BM25_ENABLED = os.getenv("HYBRID_BM25_ENABLED", "true").lower() == "true"
 
 # RERANK_ENABLED: second-stage cross-encoder reranker over the FAISS
 # candidates. If the model fails to load (e.g. constrained deploy

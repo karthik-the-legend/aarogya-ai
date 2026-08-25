@@ -1,7 +1,7 @@
 # ================================================================
 # backend\rag_pipeline.py
-# Core RAG engine: FAISS retrieval -> cross-encoder rerank ->
-# evidence threshold -> Groq LLM.
+# Core RAG engine: hybrid (FAISS dense + BM25 lexical) retrieval ->
+# cross-encoder rerank -> evidence threshold -> Groq LLM.
 # Uses modern LangChain LCEL (no deprecated RetrievalQA)
 # ================================================================
 
@@ -24,6 +24,7 @@ from config import (
     TOP_K_RETRIEVAL,
     RERANK_ENABLED,
     RERANK_MODEL,
+    HYBRID_BM25_ENABLED,
     MIN_EVIDENCE_THRESHOLD,
     LLM_MODEL,
     LLM_TEMPERATURE,
@@ -87,6 +88,7 @@ class RAGPipeline:
         self.embeddings = self._load_embeddings()
         self.vectorstore = self._load_vectorstore()
         self.retriever = self._load_retriever()
+        self.bm25 = self._load_bm25()
         self.reranker = self._load_reranker()
         self.llm = self._load_llm()
         self.chain = self._build_chain()
@@ -115,6 +117,52 @@ class RAGPipeline:
         return self.vectorstore.as_retriever(
             search_type="similarity", search_kwargs={"k": RETRIEVAL_CANDIDATES_K}
         )
+
+    def _load_bm25(self):
+        """
+        Lexical (keyword) retriever built directly from the FAISS
+        docstore's own documents — no re-ingestion needed. See config.py
+        HYBRID_BM25_ENABLED for why this exists: dense embedding search
+        can miss a short, specific fact (a drug name) buried inside a
+        longer, topically-mixed chunk; BM25 catches it on the literal
+        term. Wrapped in try/except like the reranker — falls back to
+        dense-only retrieval if it can't build for any reason.
+        """
+        if not HYBRID_BM25_ENABLED:
+            print("  BM25 hybrid retrieval disabled via config — using dense-only.")
+            return None
+        try:
+            from langchain_community.retrievers import BM25Retriever
+
+            print("  Building BM25 lexical index from FAISS docstore...")
+            docs = list(self.vectorstore.docstore._dict.values())
+            retriever = BM25Retriever.from_documents(docs)
+            retriever.k = RETRIEVAL_CANDIDATES_K
+            return retriever
+        except Exception as e:
+            print(f"  [RAGPipeline] BM25 unavailable ({e}) — falling back to dense-only retrieval.")
+            return None
+
+    def _retrieve_candidates(self, query: str) -> list:
+        """
+        Dense (FAISS) candidates, unioned with lexical (BM25) candidates
+        when available, deduped by (source, page, content-prefix) so the
+        same chunk isn't reranked twice just because both retrievers
+        found it.
+        """
+        dense_docs = self.retriever.invoke(query)
+        if self.bm25 is None:
+            return dense_docs
+
+        bm25_docs = self.bm25.invoke(query)
+        seen = set()
+        merged = []
+        for doc in dense_docs + bm25_docs:
+            key = (doc.metadata.get("source"), doc.metadata.get("page"), doc.page_content[:50])
+            if key not in seen:
+                seen.add(key)
+                merged.append(doc)
+        return merged
 
     def _load_reranker(self):
         """
@@ -249,7 +297,7 @@ Your response (in {language}):"""
             refused        : bool  — True if the LLM was never called
                                      because evidence was insufficient
         """
-        candidates = self.retriever.invoke(query)
+        candidates = self._retrieve_candidates(query)
         docs, evidence_score = self._rerank(query, candidates)
         sources = [self._enrich_source(doc) for doc in docs]
 

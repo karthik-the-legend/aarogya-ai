@@ -10,6 +10,7 @@ langchain-huggingface
 langchain-groq
 langchain-google-genai
 faiss-cpu
+rank_bm25
 sentence-transformers
 pypdf
 deep-translator
