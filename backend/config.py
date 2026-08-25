@@ -104,6 +104,15 @@ RERANK_MODEL = os.getenv("RERANK_MODEL", "cross-encoder/ms-marco-MiniLM-L-6-v2")
 # fallback path, where cross-encoder scores don't exist).
 MIN_EVIDENCE_THRESHOLD = float(os.getenv("MIN_EVIDENCE_THRESHOLD", "0.15"))
 
+# CONTRADICTION_CHECK_ENABLED: deterministic pre-generation check for
+# opposing drug guidance across the retrieved chunks ("avoid X" in one
+# vs "take X" in another). See backend/contradiction.py for why this is
+# a narrow regex check rather than an LLM call, and why it's safe to
+# gate a refusal on — verified against 8 real queries with zero false
+# positives after excluding scoped clinical caveats (e.g. "avoid X in
+# children under Y months" is not a contradiction with "take X").
+CONTRADICTION_CHECK_ENABLED = os.getenv("CONTRADICTION_CHECK_ENABLED", "true").lower() == "true"
+
 # GROUNDING_ENABLED: post-generation claim-level verification. After
 # the LLM answers, a second LLM call (same Groq model, already loaded)
 # fact-checks the answer against the retrieved evidence and returns

@@ -17,6 +17,7 @@ from langchain_groq import ChatGroq
 from langchain_core.output_parsers import StrOutputParser
 
 from intent import classify_intent, extract_entities
+from contradiction import detect_contradiction
 
 from config import (
     DATA_DIR,
@@ -28,6 +29,7 @@ from config import (
     RERANK_MODEL,
     HYBRID_BM25_ENABLED,
     MIN_EVIDENCE_THRESHOLD,
+    CONTRADICTION_CHECK_ENABLED,
     GROUNDING_ENABLED,
     LLM_MODEL,
     LLM_TEMPERATURE,
@@ -40,6 +42,15 @@ from config import (
 REFUSAL_MESSAGE = (
     "I do not have enough information on this. "
     "Please visit a nearby health centre or doctor."
+)
+
+# Distinct from REFUSAL_MESSAGE: the evidence isn't missing, it's
+# conflicting. Telling the user that specifically (rather than the
+# generic "not enough information") is more honest about why they're
+# being asked to see a doctor instead of getting an answer.
+CONTRADICTION_MESSAGE = (
+    "The available sources give conflicting guidance on this. "
+    "Please consult a doctor or pharmacist rather than relying on this alone."
 )
 
 
@@ -438,6 +449,23 @@ UNSUPPORTED: <the specific unsupported claim, quoted>"""
                 "intent": intent.value,
                 "entities": entities_dict,
             }
+
+        # Deterministic contradiction check: refuse rather than merge
+        # opposing drug guidance into a fabricated compromise. See
+        # contradiction.py for why this is a narrow regex check.
+        if CONTRADICTION_CHECK_ENABLED:
+            has_conflict, conflicting_drug = detect_contradiction(docs)
+            if has_conflict:
+                print(f"  [RAGPipeline] Contradiction detected in evidence for '{conflicting_drug}' — refusing.")
+                return {
+                    "answer": CONTRADICTION_MESSAGE,
+                    "sources": sources,
+                    "n_chunks": len(docs),
+                    "evidence_score": evidence_score,
+                    "refused": True,
+                    "intent": intent.value,
+                    "entities": entities_dict,
+                }
 
         context = "\n\n".join(doc.page_content for doc in docs)
         answer = self.chain.invoke({
