@@ -16,6 +16,8 @@ from langchain_core.prompts import PromptTemplate
 from langchain_groq import ChatGroq
 from langchain_core.output_parsers import StrOutputParser
 
+from intent import classify_intent, extract_entities
+
 from config import (
     DATA_DIR,
     VECTORSTORE_DIR,
@@ -214,7 +216,10 @@ RULE 1: Answer ONLY using the CONTEXT provided below.
         "{refusal_message}"
 
 RULE 2: NEVER suggest specific drug dosages unless the exact dosage
-        appears word-for-word in the provided context.
+        appears word-for-word in the provided context. If dosage safety
+        depends on the patient's age (child vs adult vs elderly) and
+        that is not given below, say the dosage depends on age and to
+        confirm it with a doctor or pharmacist — do not assume an adult.
 
 RULE 3: NEVER say "you have [disease]". Use "this sounds like" or
         "symptoms suggest it could be".
@@ -225,6 +230,11 @@ RULE 4: Always end your response with this exact sentence:
 RULE 5: Respond in {language}. Use simple words that a person with
         5th-grade education would understand clearly.
 
+QUERY CONTEXT (detected automatically — use it to tailor tone and
+relevance, e.g. a PREGNANCY or CHILD_HEALTH query deserves extra
+caution; never treat this as additional evidence, only as framing):
+{query_context}
+
 CONTEXT (from verified WHO/CDC/NIH medical documents):
 {context}
 
@@ -234,7 +244,7 @@ Your response (in {language}):"""
 
         prompt = PromptTemplate(
             template=template,
-            input_variables=["context", "question", "language"],
+            input_variables=["context", "question", "language", "query_context"],
             partial_variables={"refusal_message": REFUSAL_MESSAGE},
         )
 
@@ -389,7 +399,25 @@ UNSUPPORTED: <the specific unsupported claim, quoted>"""
                                      logging/evaluation (empty string if
                                      grounding was skipped for this call,
                                      e.g. the pre-generation refusal path)
+            intent         : str   — detected MedicalIntent value
+            entities       : dict  — extracted age/duration/disease/
+                                     pregnancy fields, for logging and
+                                     future explainability (never
+                                     invented — unfound fields are None)
         """
+        intent = classify_intent(query)
+        entities = extract_entities(query)
+        entities_dict = {
+            "age_years": entities.age_years,
+            "age_group": entities.age_group,
+            "duration_raw": entities.duration_raw,
+            "mentioned_diseases": entities.mentioned_diseases,
+            "pregnancy_mentioned": entities.pregnancy_mentioned,
+        }
+        query_context_line = f"Detected topic: {intent.value}."
+        if not entities.is_empty():
+            query_context_line += f" {entities.as_prompt_line()}."
+
         candidates = self._retrieve_candidates(query)
         docs, evidence_score = self._rerank(query, candidates)
         sources = [self._enrich_source(doc) for doc in docs]
@@ -407,10 +435,17 @@ UNSUPPORTED: <the specific unsupported claim, quoted>"""
                 "n_chunks": len(docs),
                 "evidence_score": evidence_score,
                 "refused": True,
+                "intent": intent.value,
+                "entities": entities_dict,
             }
 
         context = "\n\n".join(doc.page_content for doc in docs)
-        answer = self.chain.invoke({"context": context, "question": query, "language": language})
+        answer = self.chain.invoke({
+            "context": context,
+            "question": query,
+            "language": language,
+            "query_context": query_context_line,
+        })
 
         # Post-generation claim-level grounding: catches the case where
         # retrieval found genuinely relevant chunks (so the evidence
@@ -432,6 +467,8 @@ UNSUPPORTED: <the specific unsupported claim, quoted>"""
                 "refused": True,
                 "grounded": False,
                 "grounding_verdict": verdict,
+                "intent": intent.value,
+                "entities": entities_dict,
             }
 
         return {
@@ -442,4 +479,6 @@ UNSUPPORTED: <the specific unsupported claim, quoted>"""
             "refused": False,
             "grounded": True,
             "grounding_verdict": verdict,
+            "intent": intent.value,
+            "entities": entities_dict,
         }
