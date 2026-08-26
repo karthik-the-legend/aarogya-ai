@@ -20,9 +20,11 @@ pinned: false
 
 ## 🌐 Live Demo — Click to Use Now
 
-**→ [https://huggingface.co/spaces/karthik55555/aarogya-ai](https://huggingface.co/spaces/karthik55555/aarogya-ai)**
+**→ [https://aarogya-ai-8gqvuucanpgm5vqmcrgyin.streamlit.app](https://aarogya-ai-8gqvuucanpgm5vqmcrgyin.streamlit.app)**
 
 No installation needed. Ask a health question in Hindi, Tamil, Telugu, or Kannada.
+The app sleeps after inactivity on the free tier — if you see a "waking up" screen,
+give it a few seconds and it'll load.
 
 ---
 
