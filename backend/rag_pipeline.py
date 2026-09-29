@@ -31,6 +31,7 @@ from config import (
     MIN_EVIDENCE_THRESHOLD,
     CONTRADICTION_CHECK_ENABLED,
     GROUNDING_ENABLED,
+    GROUNDING_REVISION_ENABLED,
     LLM_MODEL,
     LLM_TEMPERATURE,
     LLM_MAX_TOKENS,
@@ -107,6 +108,7 @@ class RAGPipeline:
         self.llm = self._load_llm()
         self.chain = self._build_chain()
         self.verification_chain = self._build_verification_chain()
+        self.revision_chain = self._build_revision_chain()
         self.source_registry = _load_source_registry()
         print("[RAGPipeline] Ready.")
 
@@ -327,6 +329,58 @@ UNSUPPORTED: <the specific unsupported claim, quoted>"""
         prompt = PromptTemplate(template=template, input_variables=["context", "answer"])
         return prompt | self.llm | StrOutputParser()
 
+    def _build_revision_chain(self):
+        """
+        One corrective rewrite after a failed grounding check. The
+        verifier's own verdict (which quotes the unsupported claim) is
+        passed back so the LLM knows exactly what to drop. The rewrite
+        is then verified again in ask() — it never ships unchecked.
+        """
+        template = """You are Aarogya, correcting your own draft answer for a rural Indian patient.
+
+A fact-checker compared the DRAFT with the EVIDENCE and reported:
+{problem}
+
+Rewrite the DRAFT so that every factual statement is directly supported by the EVIDENCE.
+Remove the reported claim and anything else the EVIDENCE does not state. Do not add new facts.
+Keep the same language ({language}), the same simple words, and the closing disclaimer sentence from the DRAFT.
+
+EVIDENCE:
+{context}
+
+DRAFT:
+{answer}
+
+Corrected answer (in {language}):"""
+
+        prompt = PromptTemplate(
+            template=template, input_variables=["problem", "language", "context", "answer"]
+        )
+        # Low reasoning effort: at the default effort a Hindi rewrite spent
+        # 2028 of 2048 tokens on hidden reasoning and often returned an
+        # empty completion (see LLM_MAX_TOKENS in config.py); at "low" the
+        # same rewrite took 211 tokens. Editing out a named claim doesn't
+        # need deep reasoning, and the result is re-verified anyway.
+        return (
+            prompt
+            | self.llm.bind(max_tokens=2 * LLM_MAX_TOKENS, reasoning_effort="low")
+            | StrOutputParser()
+        )
+
+    def _revise_answer(self, problem: str, language: str, context: str, answer: str) -> str:
+        """Rewrite a flagged answer; one retry on an empty completion.
+        Returns "" if both attempts come back empty."""
+        for _ in range(2):
+            revised = self.revision_chain.invoke({
+                "problem": problem,
+                "language": language,
+                "context": context,
+                "answer": answer,
+            }).strip()
+            if revised:
+                return revised
+        return ""
+
     def _verify_grounding(self, context: str, answer: str) -> tuple:
         """
         Returns (grounded, reason). grounded is False only when the
@@ -484,6 +538,18 @@ UNSUPPORTED: <the specific unsupported claim, quoted>"""
         grounded, verdict = True, ""
         if GROUNDING_ENABLED:
             grounded, verdict = self._verify_grounding(context, answer)
+
+            if not grounded and GROUNDING_REVISION_ENABLED:
+                print(f"  [RAGPipeline] Grounding flagged: {verdict} — revising once.")
+                revised = self._revise_answer(verdict, language, context, answer)
+                if revised:
+                    grounded, verdict = self._verify_grounding(context, revised)
+                    # An empty or unparseable verdict keeps an answer by
+                    # design; a rewrite of an already-flagged answer
+                    # needs an explicit SUPPORTED instead.
+                    grounded = verdict.upper().startswith("SUPPORTED")
+                    if grounded:
+                        answer = revised
 
         if not grounded:
             print(f"  [RAGPipeline] Grounding check failed: {verdict}")

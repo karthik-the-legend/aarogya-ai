@@ -132,6 +132,17 @@ CONTRADICTION_CHECK_ENABLED = os.getenv("CONTRADICTION_CHECK_ENABLED", "true").l
 # outrank the same fabrication test.
 GROUNDING_ENABLED = os.getenv("GROUNDING_ENABLED", "true").lower() == "true"
 
+# GROUNDING_REVISION_ENABLED: when the grounding check flags a claim,
+# ask the LLM once to rewrite the answer without it, then re-check.
+# The rewrite must pass the same check or the query is refused exactly
+# as before, so this never lets an unsupported claim through. Why: in
+# live testing (Sep 2026) the generator often added one small detail
+# the evidence doesn't state word for word ("fever lasting 48-72
+# hours", "trouble sleeping") and the whole answer was discarded —
+# 2 of the 3 Hindi example queries were refused despite evidence
+# scores of 0.98+. Costs two extra LLM calls, only on flagged answers.
+GROUNDING_REVISION_ENABLED = os.getenv("GROUNDING_REVISION_ENABLED", "true").lower() == "true"
+
 # ────────────────────────────────────────────────────────────────
 # SECTION 6: LLM (Groq)
 # ────────────────────────────────────────────────────────────────
