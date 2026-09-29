@@ -61,7 +61,7 @@ each of which can refuse on its own.
 | 2 | **Cross-encoder reranking** | `ms-marco-MiniLM-L-6-v2` rescores the pool, top-3 go to the LLM | Query-document scoring beats embedding proximity for picking which 3 chunks actually answer the question |
 | 3 | **Evidence gate** | Top chunk must clear a calibrated score (0.15) or the LLM is **never called** | Deterministic refusal is cheaper and more reliable than trusting the prompt's own "insufficient context" rule to fire every time |
 | 4 | **Contradiction check** | Refuses when retrieved chunks give opposing drug guidance ("avoid X" vs "take X") | Prevents merging conflicting sources into a fabricated compromise. Scoped to drug names, and ignores scoped clinical caveats like *"avoid X in children under 6 months"* |
-| 5 | **Grounding verification** | After generation, a second LLM pass fact-checks the answer against the evidence — `SUPPORTED` / `UNSUPPORTED` | An unsupported claim discards the **whole answer** rather than shipping it |
+| 5 | **Grounding verification** | After generation, a second LLM pass fact-checks the answer against the evidence — `SUPPORTED` / `UNSUPPORTED` | An unsupported claim gets **one** rewrite with that claim removed; if the rewrite doesn't pass the same check, the whole answer is discarded rather than shipped |
 | 6 | **Intent + entity extraction** | Rule-based classifier (15 intents) plus conservative age/duration/disease/pregnancy extraction | Deterministic and interpretable; never invents a field it can't find |
 | 7 | **Expanded triage** | **135** emergency keywords + 30 monitor keywords, now with categories (respiratory, cardiovascular, …) | Up from 97 in V1; categories make each RED decision explainable |
 | 8 | **Translation safety tests** | Regression suite asserting dosages and the **108** emergency number survive translation intact | A mistranslated `500mg` or a dropped `108` is a safety bug, not a cosmetic one |
@@ -101,7 +101,7 @@ CONTRADICTION CHECK — opposing drug guidance? → refuse
         ↓
 Groq LLM — gpt-oss-20b (5-rule safety prompt, temp=0.1)
         ↓
-GROUNDING VERIFICATION — 2nd LLM pass; UNSUPPORTED → discard answer, refuse
+GROUNDING VERIFICATION — 2nd LLM pass; UNSUPPORTED → one rewrite, re-check, else refuse
         ↓
 POST-TRIAGE — rescan query + answer (RED overrides the LLM entirely)
         ↓
@@ -157,19 +157,23 @@ correct grounded answer at `0.75` (hybrid + rerank).
 git clone https://github.com/karthik-the-legend/aarogya-ai && cd aarogya-ai
 py -3.11 -m venv env && .\env\Scripts\Activate.ps1
 pip install -r requirements.txt
-echo GROQ_API_KEY=your_key > .env && python backend\ingest.py
+Set-Content .env "GROQ_API_KEY=your_key" -Encoding ascii
 streamlit run app.py
 ```
-Then open **http://localhost:8501**.
+Then open **http://localhost:8501**. The FAISS index ships in `vectorstore/`; run
+`python backend\ingest.py` only after changing the PDFs in `data/`.
+
+(Use `Set-Content ... -Encoding ascii` rather than `echo ... > .env`: in Windows
+PowerShell 5.1, `>` writes UTF-16, which `python-dotenv` can't read.)
 
 `app.py` loads the RAG pipeline in-process — no separate API server is required.
 The FastAPI service in `backend/main.py` is optional, for calling the pipeline over
 HTTP: `uvicorn backend.main:app --reload`.
 
 **Environment variables** — `GROQ_API_KEY` is required. `SARVAM_API_KEY` (better Indian
-language translation) and `GEMINI_API_KEY` (alternate LLM) are optional. Every V2 layer
-can be toggled: `HYBRID_BM25_ENABLED`, `RERANK_ENABLED`, `CONTRADICTION_CHECK_ENABLED`,
-`GROUNDING_ENABLED`, `MIN_EVIDENCE_THRESHOLD`.
+language translation) is optional. Every V2 layer can be toggled: `HYBRID_BM25_ENABLED`,
+`RERANK_ENABLED`, `CONTRADICTION_CHECK_ENABLED`, `GROUNDING_ENABLED`,
+`GROUNDING_REVISION_ENABLED`, `MIN_EVIDENCE_THRESHOLD`.
 
 ---
 

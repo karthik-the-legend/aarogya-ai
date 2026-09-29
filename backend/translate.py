@@ -136,9 +136,28 @@ def _translate_lines(text: str, translate_line) -> str:
     a single run-on paragraph, which destroys the LLM's markdown formatting
     (bullet lists, headings). Translating line-by-line keeps the structure
     intact so responses stay readable in the target language.
+
+    Lines that aren't English are kept as-is. The LLM is prompted to
+    answer in the user's language already (RULE 5), so without this
+    every line of a Hindi answer was re-sent to the translator as if it
+    were English — one wasted API call per line, enough to hit Google's
+    rate limit, and a chance of garbling text that was already right.
+    Canned English messages (refusals) still get translated.
     """
     lines = text.split("\n")
-    return "\n".join(translate_line(line) if line.strip() else "" for line in lines)
+    return "\n".join(
+        translate_line(line) if _is_mostly_latin(line) else line
+        for line in lines
+    )
+
+
+def _is_mostly_latin(line: str) -> bool:
+    """True when a line has more Latin letters than other-script letters.
+    False for lines with no letters at all (blank, "---", "500"), which
+    have nothing to translate."""
+    latin = sum(1 for ch in line if ch.isascii() and ch.isalpha())
+    other = sum(1 for ch in line if ch.isalpha() and not ch.isascii())
+    return latin > other
 
 
 def _google_translate(text: str, source: str, target: str) -> str:

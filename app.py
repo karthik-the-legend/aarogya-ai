@@ -32,22 +32,6 @@ warnings.filterwarnings("ignore")
 logging.getLogger("transformers").setLevel(logging.ERROR)
 os.environ["TRANSFORMERS_VERBOSITY"] = "error"
 
-# Keep Streamlit Cloud awake
-import threading
-import urllib.request
-
-def keep_alive():
-    while True:
-        try:
-            urllib.request.urlopen(
-                "https://aarogya-ai-8gqvuucanpgm5vqmcrgyin.streamlit.app"
-            )
-        except:
-            pass
-        time.sleep(300)  # ping every 5 minutes
-
-threading.Thread(target=keep_alive, daemon=True).start()
-
 # ── Page config ──────────────────────────────────────────────────
 st.set_page_config(
     page_title="Aarogya AI",
@@ -492,7 +476,13 @@ for msg in st.session_state.messages:
                 st.caption(f"⏱️ {msg['latency']}ms")
 
 # ── Handle voice upload (uses sidebar's `uploaded` variable) ─────
+# The uploader keeps its file across reruns, so without this check the
+# same clip was transcribed and answered again on every later click.
+voice_id = None
 if uploaded is not None:
+    voice_id = getattr(uploaded, "file_id", None) or f"{uploaded.name}:{uploaded.size}"
+if voice_id is not None and st.session_state.get("voice_done") != voice_id:
+    st.session_state["voice_done"] = voice_id
     with st.spinner("🎙️ Transcribing audio..."):
         try:
             import tempfile
@@ -549,6 +539,16 @@ if uploaded is not None:
                     st.markdown("**🔊 Listen:**")
                     st.audio(audio_bytes, format="audio/mp3", start_time=0)
                     st.download_button("⬇️ Download", audio_bytes, "response.mp3", "audio/mp3")
+
+            st.session_state.messages.append({"role": "user", "content": f"🎙️ {query}"})
+            st.session_state.messages.append({
+                "role": "assistant", "content": answer,
+                "triage": triage, "latency": latency, "sources": sources,
+                "intent": result.get("intent"), "detected_lang": result.get("detected_lang"),
+                "evidence_score": result.get("evidence_score"), "grounded": result.get("grounded"),
+            })
+            st.session_state.query_count += 1
+            st.session_state.total_ms    += latency
 
         except Exception as e:
             st.error(f"Voice processing failed: {str(e)}")
